@@ -14,4 +14,4 @@
 
 ## Entorno
 
-- [ ] 3.1 Ejecutar CI Linux remota con red aislada antes de archivar.
+- [x] 3.1 Ejecutar CI Linux remota con red aislada antes de archivar.

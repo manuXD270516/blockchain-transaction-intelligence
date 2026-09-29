@@ -20,6 +20,7 @@ Entorno local: Windows, Node 22.23.1, npm 10.9.8, TypeScript 5.9.3, OpenSpec 1.1
 - Graphify se regeneró en modo code-only, sin clustering ni APIs de modelos: 298 nodos y 918 aristas.
 - El guard local bloquea imports de red/fetch/WebSocket para CLI offline y tiene prueba negativa propia. No constituye aislamiento de código hostil.
 - GitHub Actions `Offline foundation` ejecutado en Linux sobre `76a96b2`: job `verify` aprobado en 37 s. Incluyó instalación reproducible, typecheck, build, tests dentro de un network namespace sin conectividad, symlink de archivo y regeneración de fixtures sin diff. Run: https://github.com/manuXD270516/blockchain-transaction-intelligence/actions/runs/36526037696.
+- GitHub Actions ejecutado sobre M5 `a68be96`: job `verify` aprobado en 49 s; 126 tests, 126 aprobados, 0 fallidos y 0 omitidos dentro del network namespace sin conectividad. Run: https://github.com/manuXD270516/blockchain-transaction-intelligence/actions/runs/36529005511.
 - El test de symlink de archivo se omite localmente en Windows y se ejecutó en la CI Linux; el escape mediante junction sí se ejecutó localmente.
 - No se ejecutó una lectura live nueva para M4: la verificación MCP usó backends simulados y la llamada stdio a una capacidad diferida que no consulta RPC.
 - Para construir M5 se descargaron explícitamente, y sólo durante la fase administrativa, fuentes públicas fijadas de GitHub y el modelo ONNX fijado de Hugging Face. Búsqueda, MCP, evals y tests se ejecutaron offline. No se realizó ninguna lectura blockchain live nueva.

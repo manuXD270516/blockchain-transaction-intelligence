@@ -1,6 +1,6 @@
 # Funcionalidades y status
 
-Actualizado: 2026-09-29, después de M5 local. Implementado significa código ejecutable; validado localmente no implica todavía la CI remota de este commit ni todos los requisitos M0–M11 completos. Las especificaciones de fundación siguen abiertas.
+Actualizado: 2026-09-29, después de M5. Implementado significa código ejecutable; validado no implica todos los requisitos M0–M11 completos. Las especificaciones de fundación siguen abiertas.
 
 | Hito | Funcionalidad | Estado | Evidencia / límite |
 |---|---|---|---|
@@ -48,7 +48,7 @@ Actualizado: 2026-09-29, después de M5 local. Implementado significa código ej
 | M4 | trace_transaction | Abstención implementada y validada | devuelve unavailable/UNSUPPORTED_CAPABILITY; no RPC debug |
 | M4/M5 | search_protocol_docs | Implementado y validado localmente | corpus local M5; unavailable/CORPUS_NOT_CONFIGURED si falta o no pasa integridad |
 | M4 | Envelopes, límites y errores públicos | Implementado y validado localmente | 100 elementos/página, 2 MiB, HMAC con expiración, mensajes sin eco de input/proveedor |
-| M5 | Corpus curado y versionado | Implementado y validado localmente | 6 documentos/139 chunks; EIPs CC0, OpenZeppelin MIT, dos majors incompatibles y auditoría con alcance |
+| M5 | Corpus curado y versionado | Implementado y validado local y remotamente | 6 documentos/139 chunks; EIPs CC0, OpenZeppelin MIT, dos majors incompatibles y auditoría con alcance |
 | M5 | Ingesta administrativa allowlisted | Implementado y validado localmente | lock SHA-256, hosts/DNS públicos, límites, Markdown/PDF; única fase con red |
 | M5 | Loader de snapshots inmutables | Implementado y validado localmente | rutas, tamaños, hashes, modelo, vectores y spans exactos verificados antes de buscar |
 | M5 | Búsqueda híbrida y filtros | Implementado y validado localmente | BM25 + MiniLM 384d local + cosine + RRF; filtros protocol/version/chain |

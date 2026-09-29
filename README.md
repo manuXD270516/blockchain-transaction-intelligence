@@ -2,7 +2,7 @@
 
 Plataforma analítica y educativa para investigar transacciones EVM mediante datos públicos, MCP, agentes y RAG con evidencia verificable.
 
-**Estado: M0–M5 implementados y verificados localmente.** Hay replay offline, adapter Ethereum Sepolia de sólo lectura, normalización canónica, extracción estricta de eventos estándar, servidor MCP stdio y retrieval documental versionado. M6–M11 siguen pendientes. No firma, custodia, invierte, despliega contratos ni mueve fondos, tampoco en testnet.
+**Estado: M0–M5 implementados y verificados local y remotamente.** Hay replay offline, adapter Ethereum Sepolia de sólo lectura, normalización canónica, extracción estricta de eventos estándar, servidor MCP stdio y retrieval documental versionado. M6–M11 siguen pendientes. No firma, custodia, invierte, despliega contratos ni mueve fondos, tampoco en testnet.
 
 [Listado completo de funcionalidades y status](docs/feature-status.md) · [Validación M0–M5](docs/verification.md)
 
