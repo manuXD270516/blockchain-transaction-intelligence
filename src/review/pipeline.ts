@@ -7,6 +7,8 @@ import { canonical } from '../normalization/evidence.js';
 import { deriveAnomalies } from './anomalies.js';
 import { buildEvidenceIndex, ReviewInputError, validateClaim } from './evidence.js';
 import type { EvidenceIndex } from './evidence.js';
+import { NOOP_TELEMETRY } from '../telemetry/tracer.js';
+import type { Telemetry } from '../telemetry/tracer.js';
 import { ReviewPolicyError, validateReviewResponse } from './model.js';
 import { ANOMALY_RULES_VERSION, REVIEW_POLICY_VERSION, VALIDATOR_VERSION } from './types.js';
 import type { EvidenceAgentResponse, EvidenceFinding, EvidenceRequest, ReportStatus, ReviewBudgets, ReviewedClaim,
@@ -28,13 +30,28 @@ const STATEMENTS: Record<ReportStatus, string> = {
 type RoleState = 'completed' | 'not_run' | 'failed';
 
 export interface ReviewInput { investigation: Investigation; draft: AnalysisDraft; started_at: number }
-export interface ReviewOptions { provider?: ModelProvider; now?: () => number }
+export interface ReviewOptions { provider?: ModelProvider; now?: () => number; telemetry?: Telemetry }
 
 export class EvidenceReviewPipeline {
   private readonly now: () => number;
-  constructor(private readonly options: ReviewOptions = {}) { this.now = options.now ?? Date.now; }
+  private readonly telemetry: Telemetry;
+  constructor(private readonly options: ReviewOptions = {}) {
+    this.now = options.now ?? Date.now;
+    this.telemetry = options.telemetry ?? NOOP_TELEMETRY;
+  }
 
   async review(input: ReviewInput): Promise<ReviewedReport> {
+    return this.telemetry.span('review', { review_policy_version: REVIEW_POLICY_VERSION, validator_version: VALIDATOR_VERSION },
+      async span => {
+        const report = await this.reviewDraft(input);
+        span.set({ report_status: report.status, evidence_agent: report.coverage.evidence_agent ?? null,
+          reviewer: report.coverage.reviewer ?? null, model_calls: report.budgets.review.model_calls,
+          corrections: report.budgets.review.corrections, journal_entries: report.review_journal.length });
+        return report;
+      });
+  }
+
+  private async reviewDraft(input: ReviewInput): Promise<ReviewedReport> {
     const { investigation, draft } = input;
     if (new Set(draft.claims.map(claim => claim.claim_id)).size !== draft.claims.length) throw new ReviewInputError('INVALID_DRAFT');
     const index = buildEvidenceIndex(investigation, draft);
@@ -44,7 +61,7 @@ export class EvidenceReviewPipeline {
     const journal: ReviewedReport['review_journal'] = [];
     const budgets: ReviewBudgets = { max_model_calls: 4, max_model_calls_per_role: 2, model_calls: 0,
       input_tokens: 0, output_tokens: 0, corrections: 0 };
-    const session = new ReviewSession(this.options.provider, draft, budgets, this.now, input.started_at);
+    const session = new ReviewSession(this.options.provider, draft, budgets, this.now, input.started_at, this.telemetry);
     let evidenceState: RoleState = 'not_run';
     let reviewerState: RoleState = 'not_run';
     let findings: EvidenceFinding[] = [];
@@ -97,7 +114,8 @@ function budget(ok: boolean): asserts ok { if (!ok) throw new BudgetError(); }
 class ReviewSession {
   private readonly roleCalls: Record<ReviewRole, number> = { evidence_agent: 0, reviewer: 0 };
   constructor(private readonly provider: ModelProvider | undefined, private readonly draft: AnalysisDraft,
-    private readonly budgets: ReviewBudgets, private readonly now: () => number, private readonly started: number) {}
+    private readonly budgets: ReviewBudgets, private readonly now: () => number, private readonly started: number,
+    private readonly telemetry: Telemetry) {}
 
   async call(role: ReviewRole, context: Json, claims: ReadonlySet<string>): Promise<EvidenceAgentResponse | ReviewerResponse> {
     try { return await this.attempt(role, 'review', context, claims, []); }
@@ -109,7 +127,18 @@ class ReviewSession {
     }
   }
 
-  private async attempt(role: ReviewRole, phase: ReviewModelRequest['phase'], context: Json, claims: ReadonlySet<string>,
+  private attempt(role: ReviewRole, phase: ReviewModelRequest['phase'], context: Json, claims: ReadonlySet<string>,
+    errors: string[]): Promise<EvidenceAgentResponse | ReviewerResponse> {
+    return this.telemetry.span('review.model', { role, phase, prompt_version: this.provider?.manifest.review_prompt_versions?.[role] ?? null,
+      validation_errors: errors.length }, async span => {
+      const response = await this.complete(role, phase, context, claims, errors);
+      span.set({ input_tokens: response.usage.input_tokens, output_tokens: response.usage.output_tokens,
+        evidence_requests: response.evidence_requests.length });
+      return response;
+    });
+  }
+
+  private async complete(role: ReviewRole, phase: ReviewModelRequest['phase'], context: Json, claims: ReadonlySet<string>,
     errors: string[]): Promise<EvidenceAgentResponse | ReviewerResponse> {
     const provider = this.provider!;
     const used = this.draft.manifest.budgets.used;

@@ -11,3 +11,4 @@ coverage/
 *.log
 corpus/staging*/
 corpus/current/
+.runs/

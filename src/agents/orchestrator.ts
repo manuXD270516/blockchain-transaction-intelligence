@@ -3,7 +3,10 @@ import type { Json } from '../domain/types.js';
 import { sha256 } from '../fixtures/loader.js';
 import { canonical } from '../normalization/evidence.js';
 import { EvidenceReviewPipeline } from '../review/pipeline.js';
+import { ANOMALY_RULES_VERSION, REVIEW_POLICY_VERSION, VALIDATOR_VERSION } from '../review/types.js';
 import type { ReviewedReport } from '../review/types.js';
+import { NOOP_TELEMETRY } from '../telemetry/tracer.js';
+import type { Telemetry } from '../telemetry/tracer.js';
 import { buildBaseline } from './baseline.js';
 import { AgentValidationError, modelClaim, validateModelResponse } from './claims.js';
 import type { AgentTools, AnalysisBudgets, AnalysisDraft, AnalystRole, BudgetUsage, ModelProvider,
@@ -31,17 +34,47 @@ export interface OrchestratorOptions {
   provider?: ModelProvider;
   tools?: AgentTools;
   now?: () => number;
+  telemetry?: Telemetry;
 }
 
 export class BoundedAnalysisOrchestrator {
   private readonly now: () => number;
-  constructor(private readonly options: OrchestratorOptions = {}) { this.now = options.now ?? Date.now; }
+  private readonly telemetry: Telemetry;
+  constructor(private readonly options: OrchestratorOptions = {}) {
+    this.now = options.now ?? Date.now;
+    this.telemetry = options.telemetry ?? NOOP_TELEMETRY;
+  }
 
   async runReviewed(input: AnalysisInput): Promise<ReviewedReport> {
-    const started = this.now();
-    const draft = await this.run(input, started);
-    const review = new EvidenceReviewPipeline({ now: this.now, ...(this.options.provider ? { provider: this.options.provider } : {}) });
-    return review.review({ investigation: input.investigation, draft, started_at: started });
+    const manifest = this.options.provider?.manifest;
+    const attributes = { chain_id: input.investigation.chain_id, mode: input.investigation.mode,
+      block_number: input.investigation.snapshot?.block_number ?? null, block_hash: input.investigation.snapshot?.block_hash ?? null,
+      question_sha256: typeof input.question === 'string' ? sha256(input.question) : null,
+      analysis_policy_version: POLICY_VERSION, review_policy_version: REVIEW_POLICY_VERSION,
+      validator_version: VALIDATOR_VERSION, anomaly_rules_version: ANOMALY_RULES_VERSION,
+      provider: manifest ? `${manifest.provider}/${manifest.model}@${manifest.version}` : null };
+    return this.telemetry.span('run', attributes, async root => {
+      const started = this.now();
+      const draft = await this.telemetry.span('analysis', {}, async span => {
+        const value = await this.run(input, started);
+        span.set({ draft_status: value.status, draft_id: value.draft_id, claims: value.claims.length,
+          rejected_claims: value.rejected_claims.length, analysts_completed: value.coverage.analysts_completed.length });
+        return value;
+      });
+      const review = new EvidenceReviewPipeline({ now: this.now, telemetry: this.telemetry,
+        ...(this.options.provider ? { provider: this.options.provider } : {}) });
+      const report = await review.review({ investigation: input.investigation, draft, started_at: started });
+      const { analysis, review: reviewBudgets } = report.budgets;
+      root.set({ report_status: report.status, report_id: report.report_id, warnings: report.warnings.length,
+        anomalies: report.anomalies.length, conclusions: report.conclusions.length,
+        analysis_tool_calls_used: analysis.used.tool_calls, analysis_model_calls_used: analysis.used.model_calls,
+        analysis_input_tokens_used: analysis.used.input_tokens, analysis_output_tokens_used: analysis.used.output_tokens,
+        analysis_corrections_used: analysis.used.corrections, analysis_tool_calls_remaining: analysis.remaining.tool_calls,
+        review_model_calls_used: reviewBudgets.model_calls, review_input_tokens_used: reviewBudgets.input_tokens,
+        review_output_tokens_used: reviewBudgets.output_tokens, review_corrections_used: reviewBudgets.corrections,
+        deadline_ms: report.budgets.deadline_ms, warning_codes: report.warnings.join(',') });
+      return report;
+    });
   }
 
   async run(input: AnalysisInput, startedAt?: number): Promise<AnalysisDraft> {
@@ -120,6 +153,17 @@ export class BoundedAnalysisOrchestrator {
   private async model(role: AnalystRole, phase: ModelResponse['phase'], input: AnalysisInput, results: ToolResultRecord[],
     errors: string[], used: BudgetUsage, started: number): Promise<ModelResponse> {
     const provider = this.options.provider!;
+    return this.telemetry.span('analyst.model', { role, phase, prompt_version: provider.manifest.prompt_versions[role] ?? null,
+      validation_errors: errors.length }, async span => {
+      const response = await this.modelCall(provider, role, phase, input, results, errors, used, started);
+      span.set({ input_tokens: response.usage.input_tokens, output_tokens: response.usage.output_tokens,
+        claims: response.claims.length, tool_requests: response.tool_requests.length });
+      return response;
+    });
+  }
+
+  private async modelCall(provider: ModelProvider, role: AnalystRole, phase: ModelResponse['phase'], input: AnalysisInput,
+    results: ToolResultRecord[], errors: string[], used: BudgetUsage, started: number): Promise<ModelResponse> {
     budget(used.model_calls < DEFAULT_ANALYSIS_BUDGETS.max_model_calls && this.now() - started < DEFAULT_ANALYSIS_BUDGETS.deadline_ms);
     used.model_calls++;
     const context = analysisContext(input, buildBaseline(input.investigation));
@@ -150,29 +194,37 @@ export class BoundedAnalysisOrchestrator {
     for (const request of requests) {
       if (seen.has(request.request_id)) throw new AgentValidationError(['DUPLICATE_TOOL_REQUEST']);
       seen.add(request.request_id);
-      if (!TOOLS[role].has(request.tool) || !validArguments(role, request, input, baseline)) {
-        results.push(denied(request, 'POLICY_DENIED', journal)); continue;
-      }
-      budget(used.tool_calls < DEFAULT_ANALYSIS_BUDGETS.max_tool_calls && this.now() - started < DEFAULT_ANALYSIS_BUDGETS.deadline_ms);
-      used.tool_calls++;
-      try {
-        const value = await this.options.tools.call(request.tool, request.arguments);
-        budget(Buffer.byteLength(JSON.stringify(value.structuredContent)) <= MAX_MODEL_PAYLOAD_BYTES);
-        if (!consistentSnapshot(value.structuredContent, input.investigation)) {
-          results.push(denied(request, 'INCONSISTENT_SNAPSHOT', journal)); continue;
-        }
-        collectEvidence(value.structuredContent, evidence, blockedEvidence, corpusSnapshots);
-        const record: ToolResultRecord = { request_id: request.request_id, tool: request.tool,
-          status: value.isError ? 'error' : 'ok', structured_content: value.structuredContent,
-          error_code: value.isError ? publicCode(value.structuredContent) : null };
-        journal.push(record); results.push(record);
-      } catch {
-        const record: ToolResultRecord = { request_id: request.request_id, tool: request.tool,
-          status: 'error', structured_content: null, error_code: 'TOOL_ERROR' };
-        journal.push(record); results.push(record);
-      }
+      results.push(await this.telemetry.span('tool.call', { role, tool: request.tool }, async span => {
+        const record = await this.toolCall(role, request, input, baseline, journal, evidence, blockedEvidence,
+          corpusSnapshots, used, started);
+        span.set({ status: record.status, error_code: record.error_code, tool_calls_used: used.tool_calls });
+        if (record.error_code) span.count(record.error_code);
+        return record;
+      }));
     }
     return results;
+  }
+
+  private async toolCall(role: AnalystRole, request: ToolRequest, input: AnalysisInput, baseline: ReturnType<typeof buildBaseline>,
+    journal: ToolResultRecord[], evidence: Set<string>, blockedEvidence: Set<string>, corpusSnapshots: Set<string>,
+    used: BudgetUsage, started: number): Promise<ToolResultRecord> {
+    if (!TOOLS[role].has(request.tool) || !validArguments(role, request, input, baseline)) return denied(request, 'POLICY_DENIED', journal);
+    budget(used.tool_calls < DEFAULT_ANALYSIS_BUDGETS.max_tool_calls && this.now() - started < DEFAULT_ANALYSIS_BUDGETS.deadline_ms);
+    used.tool_calls++;
+    try {
+      const value = await this.options.tools!.call(request.tool, request.arguments);
+      budget(Buffer.byteLength(JSON.stringify(value.structuredContent)) <= MAX_MODEL_PAYLOAD_BYTES);
+      if (!consistentSnapshot(value.structuredContent, input.investigation)) return denied(request, 'INCONSISTENT_SNAPSHOT', journal);
+      collectEvidence(value.structuredContent, evidence, blockedEvidence, corpusSnapshots);
+      const record: ToolResultRecord = { request_id: request.request_id, tool: request.tool,
+        status: value.isError ? 'error' : 'ok', structured_content: value.structuredContent,
+        error_code: value.isError ? publicCode(value.structuredContent) : null };
+      journal.push(record); return record;
+    } catch {
+      const record: ToolResultRecord = { request_id: request.request_id, tool: request.tool,
+        status: 'error', structured_content: null, error_code: 'TOOL_ERROR' };
+      journal.push(record); return record;
+    }
   }
 }
 

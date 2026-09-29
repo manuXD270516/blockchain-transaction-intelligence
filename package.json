@@ -26,6 +26,8 @@
     "review:eval": "npm run build && node dist/review-eval-cli.js evals/review-cases.json",
     "graph": "node dist/graph-cli.js fixture",
     "eval": "npm run build && node dist/eval-cli.js run",
+    "trace": "node dist/trace-cli.js fixture",
+    "runs": "node dist/runs-cli.js",
     "mcp": "node dist/mcp-cli.js",
     "rag:fetch": "npm run build && node dist/rag-admin-cli.js fetch corpus/sources.json corpus/staging",
     "rag:build": "node dist/rag-admin-cli.js build corpus/sources.json corpus/staging corpus/snapshots/m5-v1",
