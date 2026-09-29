@@ -1,6 +1,6 @@
 # Funcionalidades y status
 
-Actualizado: 2026-09-29, después de M6 local. Implementado significa código ejecutable; validado no implica todos los requisitos M0–M11 completos. Las especificaciones de fundación siguen abiertas.
+Actualizado: 2026-09-29, después de M6. Implementado significa código ejecutable; validado no implica todos los requisitos M0–M11 completos. Las especificaciones de fundación siguen abiertas.
 
 | Hito | Funcionalidad | Estado | Evidencia / límite |
 |---|---|---|---|
@@ -54,7 +54,7 @@ Actualizado: 2026-09-29, después de M6 local. Implementado significa código ej
 | M5 | Búsqueda híbrida y filtros | Implementado y validado localmente | BM25 + MiniLM 384d local + cosine + RRF; filtros protocol/version/chain |
 | M5 | Citas, compatibilidad y abstención | Implementado y validado localmente | matched/generic/unknown/conflicting; no-answer→[]; contenido hostil no amplía autoridad |
 | M5 | Qrels y gates de retrieval | Implementado y validado localmente | Recall@5 1,00; MRR@10 0,867; abstención 1,00; versión segura |
-| M6 | Baseline determinístico | Implementado y validado localmente | claims OBSERVED/RULE-BASED con evidencia; disponible aunque falte modelo |
+| M6 | Baseline determinístico | Implementado y validado local y remotamente | claims OBSERVED/RULE-BASED con evidencia; disponible aunque falte modelo |
 | M6 | Transaction Analyst | Implementado con provider inyectable y validado offline | tools por rol y claims MODEL-INFERRED; sin provider remoto habilitado |
 | M6 | Contract Analyst | Implementado con provider inyectable y validado offline | docs incompatibles no sustentan claims; identidad unknown preservada |
 | M6 | Orquestador y presupuestos | Implementado y validado localmente | 90 s, 24 tools, 20k/4k tokens, 5 llamadas modelo y una corrección |
