@@ -1,6 +1,6 @@
 # Funcionalidades y status
 
-Actualizado: 2026-09-29, después de M6. Implementado significa código ejecutable; validado no implica todos los requisitos M0–M11 completos. Las especificaciones de fundación siguen abiertas.
+Actualizado: 2026-09-29, después de crear el change OpenSpec de M7. Implementado significa código ejecutable; validado no implica todos los requisitos M0–M11 completos. Las especificaciones de fundación siguen abiertas.
 
 | Hito | Funcionalidad | Estado | Evidencia / límite |
 |---|---|---|---|
@@ -60,11 +60,11 @@ Actualizado: 2026-09-29, después de M6. Implementado significa código ejecutab
 | M6 | Orquestador y presupuestos | Implementado y validado localmente | 90 s, 24 tools, 20k/4k tokens, 5 llamadas modelo y una corrección |
 | M6 | Tool selection y policy | Implementado y validado localmente | 1,00 en 5 casos; cero ejecuciones prohibidas |
 | M6 | Reporte aceptado/revisado | Diferido explícitamente a M7 | M6 entrega analysis_draft con claims proposed y REVIEW_NOT_RUN |
-| M7 | Evidence Agent | Especificado; pendiente | validadores de adquisición no sustituyen este rol |
-| M7 | Reviewer Agent | Especificado; pendiente | sin revisión semántica |
-| M7 | Claims OBSERVED/RULE-BASED/MODEL-INFERRED | Especificado; pendiente | aún no se generan claims |
-| M7 | Clasificación de anomalías sin atribución automática de fraude | Especificado; pendiente | sin motor detector |
-| M7 | Reporte con citas, contradicciones y abstención | Especificado; pendiente | resultado actual es adquisición/normalización, sin revisión semántica |
+| M7 | Evidence Agent | Change OpenSpec creado; no implementado | add-evidence-review-pipeline; sin tools externas |
+| M7 | Reviewer Agent | Change OpenSpec creado; no implementado | entailment y límites de alcance pendientes de código |
+| M7 | Revisión de claims OBSERVED/RULE-BASED/MODEL-INFERRED | Change OpenSpec creado; no implementado | M6 ya genera claims proposed; M7 debe pasarlos a supported/rejected/needs_revision |
+| M7 | Clasificación de anomalías sin atribución automática de fraude | Change OpenSpec creado; no implementado | anomalías sólo como claims tipados |
+| M7 | Reporte accepted/partial/inconclusive | Change OpenSpec creado; no implementado | M6 sigue entregando analysis_draft con REVIEW_NOT_RUN |
 | M8 | Grafo de transacciones y UI con evidencia | Especificado; pendiente | sin frontend |
 | M9 | Evals de reconstrucción, eventos y contratos | Especificado; pendiente | tests M0–M2 no son estos benchmarks |
 | M9 | Evals de tools, citas, retrieval y unsupported claims | Especificado; pendiente | sin agentes/corpus |
@@ -74,4 +74,4 @@ Actualizado: 2026-09-29, después de M6. Implementado significa código ejecutab
 | M11 | Demo pública educativa y hosting | Pendiente | sólo CLI local |
 | Exclusiones | Inversiones, bot financiero, custodia, firma, envío de fondos | Fuera de alcance | sin signer ni métodos RPC mutantes |
 
-Siguiente hito propuesto: **M7 — Evidence Agent, Reviewer y reporte revisado**, pero debe comenzar con su propio change OpenSpec. Tracing, proveedores remotos y nuevas redes también requieren contratos/configuración explícita antes de habilitarse.
+Siguiente hito: **implementar M7** según `openspec/changes/add-evidence-review-pipeline`. No hay código de Evidence/Reviewer ni reportes accepted todavía. Tracing, proveedores remotos y nuevas redes también requieren contratos/configuración explícita antes de habilitarse.
