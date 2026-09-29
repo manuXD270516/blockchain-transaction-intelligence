@@ -22,6 +22,8 @@
     "live:extract": "node dist/extract-cli.js live",
     "analyze": "npm run build && node dist/analyze-cli.js fixture",
     "agent:eval": "npm run build && node dist/agent-eval-cli.js evals/agent-tool-policy.json",
+    "report": "npm run build && node dist/report-cli.js fixture",
+    "review:eval": "npm run build && node dist/review-eval-cli.js evals/review-cases.json",
     "mcp": "node dist/mcp-cli.js",
     "rag:fetch": "npm run build && node dist/rag-admin-cli.js fetch corpus/sources.json corpus/staging",
     "rag:build": "node dist/rag-admin-cli.js build corpus/sources.json corpus/staging corpus/snapshots/m5-v1",

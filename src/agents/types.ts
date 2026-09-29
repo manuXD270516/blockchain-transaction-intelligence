@@ -60,11 +60,14 @@ export interface ModelResponse {
   usage: ModelUsage;
 }
 
+export type ReviewRole = 'evidence_agent' | 'reviewer';
+
 export interface ProviderManifest {
   provider: string;
   model: string;
   version: string;
   prompt_versions: Record<AnalystRole, string>;
+  review_prompt_versions?: Record<ReviewRole, string>;
   policy_version: 'bounded-analysis-policy/1.0.0';
   temperature: 0;
   seed: number | null;
@@ -82,9 +85,19 @@ export interface ModelRequest {
   validation_errors: string[];
 }
 
+export interface ReviewModelRequest {
+  schema_version: '1.0.0';
+  role: ReviewRole;
+  phase: 'review' | 'correction';
+  prompt_version: string;
+  policy_version: 'evidence-review-policy/1.0.0';
+  context: Json;
+  validation_errors: string[];
+}
+
 export interface ModelProvider {
   readonly manifest: ProviderManifest;
-  complete(request: ModelRequest, signal: AbortSignal): Promise<unknown>;
+  complete(request: ModelRequest | ReviewModelRequest, signal: AbortSignal): Promise<unknown>;
 }
 
 export interface AgentTools {
@@ -135,5 +148,5 @@ export interface AnalysisDraft {
   };
   coverage: { baseline_complete: boolean; analysts_completed: AnalystRole[]; missing: string[] };
   warnings: string[];
-  review: { status: 'not_run'; reason: 'M7_NOT_IMPLEMENTED' };
+  review: { status: 'not_run'; reason: 'ANALYSIS_DRAFT_ONLY' };
 }

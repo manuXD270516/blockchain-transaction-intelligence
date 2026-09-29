@@ -22,7 +22,7 @@ test('M6 without model provider returns deterministic baseline as inconclusive',
   assert.ok(first.claims.every(claim => claim.classification !== 'MODEL-INFERRED' && claim.review_status === 'proposed'));
   assert.ok(first.warnings.includes('MODEL_PROVIDER_NOT_CONFIGURED'));
   assert.deepEqual(first.coverage.missing, ['model_provider']);
-  assert.deepEqual(first.review, { status: 'not_run', reason: 'M7_NOT_IMPLEMENTED' });
+  assert.deepEqual(first.review, { status: 'not_run', reason: 'ANALYSIS_DRAFT_ONLY' });
 });
 
 test('scripted Transaction Analyst emits only model-inferred proposed claims', async () => {

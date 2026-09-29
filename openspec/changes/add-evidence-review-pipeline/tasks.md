@@ -5,12 +5,12 @@
 
 ## Implementación
 
-- [ ] 2.1 Extender schemas de claims, hallazgos, anomalías y reviewed_report.
-- [ ] 2.2 Implementar Evidence Agent y validadores estructurales determinísticos.
-- [ ] 2.3 Implementar Reviewer, reasons versionadas y una corrección máxima de schema.
-- [ ] 2.4 Integrar el pipeline en el orquestador sin tools externas para Evidence/Reviewer.
-- [ ] 2.5 Añadir CLI de reporte, fixtures/evals de citas y unsupported claims, y guard offline.
-- [ ] 2.6 Refrescar Graphify y actualizar README, status y verificación.
+- [x] 2.1 Extender schemas de claims, hallazgos, anomalías y reviewed_report.
+- [x] 2.2 Implementar Evidence Agent y validadores estructurales determinísticos.
+- [x] 2.3 Implementar Reviewer, reasons versionadas y una corrección máxima de schema.
+- [x] 2.4 Integrar el pipeline en el orquestador sin tools externas para Evidence/Reviewer.
+- [x] 2.5 Añadir CLI de reporte, fixtures/evals de citas y unsupported claims, y guard offline.
+- [x] 2.6 Refrescar Graphify y actualizar README, status y verificación.
 
 ## Entorno
 

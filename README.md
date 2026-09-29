@@ -2,9 +2,9 @@
 
 Plataforma analítica y educativa para investigar transacciones EVM mediante datos públicos, MCP, agentes y RAG con evidencia verificable.
 
-**Estado: M0–M6 implementados y verificados local y remotamente.** Hay replay offline, adapter Ethereum Sepolia de sólo lectura, normalización canónica, extracción estricta de eventos estándar, servidor MCP stdio, retrieval documental versionado y orquestación analítica acotada. M7 tiene change OpenSpec `add-evidence-review-pipeline` y todavía no tiene código. M8–M11 siguen pendientes. No firma, custodia, invierte, despliega contratos ni mueve fondos, tampoco en testnet.
+**Estado: M0–M6 implementados y verificados local y remotamente; M7 implementado y verificado localmente.** Hay replay offline, adapter Ethereum Sepolia de sólo lectura, normalización canónica, extracción estricta de eventos estándar, servidor MCP stdio, retrieval documental versionado, orquestación analítica acotada y revisión de evidencia con reporte. M8–M11 siguen pendientes. No firma, custodia, invierte, despliega contratos ni mueve fondos, tampoco en testnet.
 
-[Listado completo de funcionalidades y status](docs/feature-status.md) · [Validación M0–M6](docs/verification.md)
+[Listado completo de funcionalidades y status](docs/feature-status.md) · [Validación M0–M7](docs/verification.md)
 
 ## Ejecutar
 
@@ -100,7 +100,20 @@ npm run agent:eval
 
 No hay proveedor remoto habilitado ni secretos configurados. `analyze` produce offline el baseline como `inconclusive` con `MODEL_PROVIDER_NOT_CONFIGURED`; el provider scripted se usa sólo en tests/evals para verificar roles y presupuestos. La gate actual obtiene tool selection `1,00` en 5 casos y cero ejecuciones prohibidas.
 
-La salida es un `analysis_draft`: claims OBSERVED/RULE-BASED del baseline y MODEL-INFERRED de analistas permanecen `proposed`. Evidence Agent, Reviewer, revisión semántica y reportes accepted pertenecen a M7; `complete` en M6 sólo significa finalización estructural, no aprobación.
+La salida es un `analysis_draft`: claims OBSERVED/RULE-BASED del baseline y MODEL-INFERRED de analistas permanecen `proposed`. `complete` en M6 sólo significa finalización estructural, no aprobación; la revisión la hace M7.
+
+## Revisión de evidencia y reporte M7
+
+M7 continúa el mismo run con Evidence Agent y Reviewer internos, sin tools MCP, red ni filesystem, y publica un `reviewed_report` con estado `accepted`, `partial` o `inconclusive`.
+
+```powershell
+npm run report -- synthetic-reverted
+npm run review:eval
+```
+
+Antes de cualquier modelo, los validadores determinísticos reconstruyen la evidencia desde la investigación y el journal de tools. Recalculan ids de claims y hashes del DAG y rechazan citas irresolubles, snapshots mezclados, documentos incompatibles, clases incoherentes, transferencias `event_reported` elevadas a saldo o propiedad, y atribuciones de fraude o intención. Los hallazgos de Evidence Agent y los validadores prevalecen sobre un Reviewer que apruebe. Sólo los claims `supported` aparecen como conclusiones; los rechazados quedan en auditoría con motivo.
+
+`accepted` exige Evidence Agent y Reviewer completos, cero defectos, borrador M6 completo y evidencia verificable. Sin provider, `report` devuelve el baseline como hechos validados y el reporte queda `inconclusive`. Las anomalías sólo referencian claims publicados: por ahora, receipt revertido (OBSERVED) y umbral educativo de 20 eventos por receipt (RULE-BASED). Ninguna es una acusación, y el reporte siempre advierte `REVIEW_IS_NOT_A_SECURITY_AUDIT`.
 
 ## Estructura y límites
 
@@ -110,9 +123,10 @@ La salida es un `analysis_draft`: claims OBSERVED/RULE-BASED del baseline y MODE
 - `src/events`: decodificador estricto, transferencias event-reported y grafo base.
 - `src/rag`: loader de snapshots, WordPiece/MiniLM WASM y retrieval híbrido; las CLIs administrativas/eval están en `src/rag-*.ts`.
 - `src/agents`: claims, baseline, provider interface y orquestador acotado; `src/analyze-cli.ts` ofrece replay analítico offline.
+- `src/review`: índice de evidencia, validadores, schemas de Evidence Agent/Reviewer, anomalías y reporte revisado; `src/report-cli.ts` y `src/review-eval-cli.ts` son sus CLIs.
 - `src/mcp`: dispatcher, schemas, envelopes, errores públicos y cursores autenticados; `src/mcp-cli.ts` es el entrypoint stdio.
 - `corpus`: allowlist fijada y snapshot inmutable M5; staging de ingesta no se versiona.
-- `evals`: qrels versionados y gates de retrieval.
+- `evals`: qrels, policy de tools y casos de revisión con sus gates.
 - `.cursor/mcp.json`: configuración local del servidor compilado para clientes Cursor.
 - `fixtures`: cuatro escenarios sintéticos versionados y sus checksums.
 - `test`: oráculos, escenarios RPC sintéticos, pruebas de seguridad/consistencia.

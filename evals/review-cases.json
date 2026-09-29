@@ -1,0 +1,16 @@
+{
+  "schema_version": "1.0.0",
+  "cases": [
+    { "id": "supported-inferred-claim-accepted", "scenario": "accepted-inferred", "fixture_id": "synthetic-native-success", "expected_status": "accepted" },
+    { "id": "valid-citation-not-entailed", "scenario": "not-entailed", "fixture_id": "synthetic-native-success", "expected_status": "inconclusive" },
+    { "id": "wallet-baseline-language-rejected", "scenario": "unusual-wallet-language", "fixture_id": "synthetic-native-success", "expected_status": "inconclusive" },
+    { "id": "transfer-event-elevated-to-ownership", "scenario": "event-overreach", "fixture_id": "synthetic-token-events", "expected_status": "inconclusive" },
+    { "id": "evidence-agent-contradiction", "scenario": "evidence-contradiction", "fixture_id": "synthetic-native-success", "expected_status": "inconclusive" },
+    { "id": "reviewer-tool-request-denied", "scenario": "reviewer-tool-request", "fixture_id": "synthetic-native-success", "expected_status": "inconclusive" },
+    { "id": "reviewer-schema-corrected-once", "scenario": "reviewer-corrected", "fixture_id": "synthetic-native-success", "expected_status": "accepted" },
+    { "id": "reviewer-schema-persistently-invalid", "scenario": "reviewer-persistent-invalid", "fixture_id": "synthetic-native-success", "expected_status": "inconclusive" },
+    { "id": "provider-absent-baseline-only", "scenario": "no-provider", "fixture_id": "synthetic-native-success", "expected_status": "inconclusive" },
+    { "id": "review-output-budget-exceeded", "scenario": "review-budget", "fixture_id": "synthetic-native-success", "expected_status": "inconclusive" },
+    { "id": "unresolved-evidence-request", "scenario": "unresolved-request", "fixture_id": "synthetic-native-success", "expected_status": "inconclusive" }
+  ]
+}

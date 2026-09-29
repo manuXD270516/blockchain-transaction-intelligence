@@ -4,6 +4,8 @@ import { claim } from './claims.js';
 import type { Claim } from './types.js';
 
 const BASELINE_AUTHOR = { role: 'baseline' as const, provider: null, model: null, prompt_version: 'deterministic-baseline/1.0.0' };
+export const EVENT_COUNT_RULE = Object.freeze({ id: 'educational-event-count-threshold', version: '1.0.0',
+  threshold: 20, window: 'single-transaction-receipt' });
 
 export function buildBaseline(input: Investigation) {
   const extracted = extractTokenEvents(input);
@@ -41,6 +43,15 @@ export function buildBaseline(input: Investigation) {
       subject_refs: [transfer.id, transfer.token_address], classification: 'OBSERVED', evidence_ids: transfer.evidence_ids,
       derivation: { rule: 'standard-token-events', version: '1.0.0' }, uncertainty: 'limited',
       limitations: ['Event-reported movement does not prove net balance, ownership, price, intent, or token conformance.'],
+      alternatives: [], author: BASELINE_AUTHOR }));
+  }
+  if (normalized.receipt && extracted.transfers.length >= EVENT_COUNT_RULE.threshold) {
+    claims.push(claim({ text: `The educational event-count rule counts ${extracted.transfers.length} standard transfer events in this receipt, at or above threshold ${EVENT_COUNT_RULE.threshold}.`,
+      subject_refs: [normalized.receipt.id], classification: 'RULE-BASED',
+      evidence_ids: [normalized.receipt.normalization_evidence_id],
+      derivation: { rule: EVENT_COUNT_RULE.id, version: EVENT_COUNT_RULE.version }, uncertainty: 'supported',
+      limitations: ['A count threshold does not prove harm, risk, or intent.',
+        `Window: ${EVENT_COUNT_RULE.window}; no population baseline is declared.`],
       alternatives: [], author: BASELINE_AUTHOR }));
   }
   return { extracted, claims, evidence_ids: evidenceIds,

@@ -2,6 +2,8 @@ import type { Investigation } from '../adapters/contracts.js';
 import type { Json } from '../domain/types.js';
 import { sha256 } from '../fixtures/loader.js';
 import { canonical } from '../normalization/evidence.js';
+import { EvidenceReviewPipeline } from '../review/pipeline.js';
+import type { ReviewedReport } from '../review/types.js';
 import { buildBaseline } from './baseline.js';
 import { AgentValidationError, modelClaim, validateModelResponse } from './claims.js';
 import type { AgentTools, AnalysisBudgets, AnalysisDraft, AnalystRole, BudgetUsage, ModelProvider,
@@ -35,9 +37,16 @@ export class BoundedAnalysisOrchestrator {
   private readonly now: () => number;
   constructor(private readonly options: OrchestratorOptions = {}) { this.now = options.now ?? Date.now; }
 
-  async run(input: AnalysisInput): Promise<AnalysisDraft> {
-    if (typeof input.question !== 'string' || input.question.length < 1 || input.question.length > 2000) throw new AgentValidationError(['INVALID_INPUT']);
+  async runReviewed(input: AnalysisInput): Promise<ReviewedReport> {
     const started = this.now();
+    const draft = await this.run(input, started);
+    const review = new EvidenceReviewPipeline({ now: this.now, ...(this.options.provider ? { provider: this.options.provider } : {}) });
+    return review.review({ investigation: input.investigation, draft, started_at: started });
+  }
+
+  async run(input: AnalysisInput, startedAt?: number): Promise<AnalysisDraft> {
+    if (typeof input.question !== 'string' || input.question.length < 1 || input.question.length > 2000) throw new AgentValidationError(['INVALID_INPUT']);
+    const started = startedAt ?? this.now();
     const baseline = buildBaseline(input.investigation);
     const evidence = new Set(baseline.evidence_ids);
     const blockedEvidence = new Set<string>();
@@ -103,7 +112,7 @@ export class BoundedAnalysisOrchestrator {
         snapshot: input.investigation.snapshot, corpus_snapshot_ids: [...corpusSnapshots].sort(),
         provider: provider?.manifest ?? null, budgets: { initial, used, remaining }, tool_journal: journal,
         policy_version: POLICY_VERSION }, coverage: { baseline_complete: baseline.complete, analysts_completed: completed, missing },
-      warnings: [...warnings].sort(), review: { status: 'not_run' as const, reason: 'M7_NOT_IMPLEMENTED' as const } };
+      warnings: [...warnings].sort(), review: { status: 'not_run' as const, reason: 'ANALYSIS_DRAFT_ONLY' as const } };
     return { schema_version: '1.0.0', draft_id: sha256(JSON.stringify(stable)), ...stable,
       manifest: { ...stable.manifest, duration_ms: duration } };
   }

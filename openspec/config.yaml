@@ -1,7 +1,7 @@
 schema: spec-driven
 context: |
   Proyecto blockchain-transaction-intelligence. Documentación en español.
-  Estado: M0–M6 implementados y verificados local/remotamente. M7 está en change add-evidence-review-pipeline; no hay código M7 todavía.
+  Estado: M0–M6 implementados y verificados local/remotamente. M7 (add-evidence-review-pipeline) implementado y verificado localmente; CI remota pendiente.
   Analítica educativa EVM, fixtures públicos/sintéticos y testnet de solo lectura.
   Sin firma, claves privadas, custodia, trading ni envío de transacciones.
   Toda feature requiere un change previo con contratos y escenarios verificables.

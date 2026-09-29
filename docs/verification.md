@@ -1,9 +1,9 @@
-# Verificación M0–M6
+# Verificación M0–M7
 
 Entorno local: Windows, Node 22.23.1, npm 10.9.8, TypeScript 5.9.3, OpenSpec 1.11.0. Fecha: 2026-09-29.
 
-- `npm run check`: typecheck estricto y build correctos; 135 tests, 134 aprobados, 0 fallidos y 1 omitido en Windows (symlink de archivo).
-- `openspec validate --all --strict --no-interactive`: 9 changes válidos, 0 errores.
+- `npm run check`: typecheck estricto y build correctos; 145 tests, 144 aprobados, 0 fallidos y 1 omitido en Windows (symlink de archivo).
+- `openspec validate --all --strict --no-interactive`: 10 changes válidos, 0 errores.
 - Regeneración de fixtures con comparación SHA-256 antes/después: 0 archivos modificados.
 - M0: replay de tres fixtures sintéticos, integridad SHA-256, esquemas, límites de archivo, escape de directorio, estados y CLI offline determinístico.
 - M1: respuestas RPC sintéticas en test/data/sepolia-synthetic.json; chain mismatch, reorg, logs ajenos, pending, not_found, missing receipt/block, errores pruned/unsupported, reintentos, budgets, timeout/abort, JSON-RPC envelopes y tamaños.
@@ -20,7 +20,11 @@ Entorno local: Windows, Node 22.23.1, npm 10.9.8, TypeScript 5.9.3, OpenSpec 1.1
 - `npm run agent:eval`: 5 casos, tool selection 1,00 y 0 ejecuciones prohibidas. Incluye receipt permitido, docs fuera de rol, balance no solicitado/solicitado y expansión de argumentos.
 - `npm run analyze -- synthetic-native-success` opera offline sin provider: conserva baseline, devuelve inconclusive/MODEL_PROVIDER_NOT_CONFIGURED y declara REVIEW_NOT_RUN.
 - El guard MCP bloquea APIs HTTP/HTTPS/TCP/TLS, `fetch` y WebSocket sin interferir con stdio. Es un guard de regresión para el proceso confiable, no un sandbox para código hostil.
-- Graphify se regeneró en modo code-only, sin clustering ni APIs de modelos: 366 nodos y 1.106 aristas.
+- M7: índice de evidencia reconstruido desde investigación y journal, recálculo de claim ids y hashes del DAG, snapshots y documentos conflicting, clases incoherentes, overreach de transferencias, lenguaje prohibido, hallazgos de Evidence Agent, peticiones de evidencia irresolubles, denegación de tools a Evidence/Reviewer, corrección compartida con analistas, deadline y tokens compartidos, anomalías tipadas y rechazo de drafts de otra investigación.
+- `npm run review:eval`: 11 casos; status_accuracy 1,00 y 0 en evidencia publicada irresoluble, acusaciones automáticas, inferencias promocionadas, accepted con claims no soportados y ejecuciones de tools.
+- `npm run report -- synthetic-reverted` opera offline sin provider: 3 hechos validados, anomalía OBSERVED `receipt_reports_reverted`, estado inconclusive y `REVIEW_IS_NOT_A_SECURITY_AUDIT`.
+- M7 no realizó llamadas a modelos ni blockchain live; Evidence Agent y Reviewer se verificaron con el provider scripted en proceso.
+- Graphify se regeneró en modo code-only, sin clustering ni APIs de modelos: 456 nodos y 1.402 aristas.
 - El guard local bloquea imports de red/fetch/WebSocket para CLI offline y tiene prueba negativa propia. No constituye aislamiento de código hostil.
 - GitHub Actions `Offline foundation` ejecutado en Linux sobre `76a96b2`: job `verify` aprobado en 37 s. Incluyó instalación reproducible, typecheck, build, tests dentro de un network namespace sin conectividad, symlink de archivo y regeneración de fixtures sin diff. Run: https://github.com/manuXD270516/blockchain-transaction-intelligence/actions/runs/36526037696.
 - GitHub Actions ejecutado sobre M5 `a68be96`: job `verify` aprobado en 49 s; 126 tests, 126 aprobados, 0 fallidos y 0 omitidos dentro del network namespace sin conectividad. Run: https://github.com/manuXD270516/blockchain-transaction-intelligence/actions/runs/36529005511.

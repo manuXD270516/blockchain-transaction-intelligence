@@ -1,6 +1,6 @@
 # Funcionalidades y status
 
-Actualizado: 2026-09-29, después de crear el change OpenSpec de M7. Implementado significa código ejecutable; validado no implica todos los requisitos M0–M11 completos. Las especificaciones de fundación siguen abiertas.
+Actualizado: 2026-09-29, después de implementar M7. Implementado significa código ejecutable; validado no implica todos los requisitos M0–M11 completos. Las especificaciones de fundación siguen abiertas.
 
 | Hito | Funcionalidad | Estado | Evidencia / límite |
 |---|---|---|---|
@@ -59,12 +59,14 @@ Actualizado: 2026-09-29, después de crear el change OpenSpec de M7. Implementad
 | M6 | Contract Analyst | Implementado con provider inyectable y validado offline | docs incompatibles no sustentan claims; identidad unknown preservada |
 | M6 | Orquestador y presupuestos | Implementado y validado localmente | 90 s, 24 tools, 20k/4k tokens, 5 llamadas modelo y una corrección |
 | M6 | Tool selection y policy | Implementado y validado localmente | 1,00 en 5 casos; cero ejecuciones prohibidas |
-| M6 | Reporte aceptado/revisado | Diferido explícitamente a M7 | M6 entrega analysis_draft con claims proposed y REVIEW_NOT_RUN |
-| M7 | Evidence Agent | Change OpenSpec creado; no implementado | add-evidence-review-pipeline; sin tools externas |
-| M7 | Reviewer Agent | Change OpenSpec creado; no implementado | entailment y límites de alcance pendientes de código |
-| M7 | Revisión de claims OBSERVED/RULE-BASED/MODEL-INFERRED | Change OpenSpec creado; no implementado | M6 ya genera claims proposed; M7 debe pasarlos a supported/rejected/needs_revision |
-| M7 | Clasificación de anomalías sin atribución automática de fraude | Change OpenSpec creado; no implementado | anomalías sólo como claims tipados |
-| M7 | Reporte accepted/partial/inconclusive | Change OpenSpec creado; no implementado | M6 sigue entregando analysis_draft con REVIEW_NOT_RUN |
+| M6 | Reporte aceptado/revisado | Entregado por M7 | el analysis_draft M6 sigue siendo proposed; runReviewed añade la revisión |
+| M7 | Evidence Agent | Implementado con provider inyectable y validado offline | sin tools; hallazgos cerrados; peticiones de evidencia sólo sobre artefactos del run |
+| M7 | Reviewer Agent | Implementado con provider inyectable y validado offline | veredicto por claim con reasons versionadas; no sustituye a los validadores |
+| M7 | Validadores estructurales | Implementado y validado localmente | ids/hash/DAG, snapshots, documentos conflicting, clases, overreach de eventos y lenguaje prohibido |
+| M7 | Revisión de claims OBSERVED/RULE-BASED/MODEL-INFERRED | Implementado y validado localmente | supported/rejected/needs_revision; consenso no promociona MODEL-INFERRED |
+| M7 | Anomalías sin atribución automática de fraude | Implementado y validado localmente | receipt revertido (OBSERVED) y umbral educativo de 20 eventos (RULE-BASED); sin anomalías de modelo |
+| M7 | Reporte accepted/partial/inconclusive | Implementado y validado localmente | CLI offline; sin provider queda inconclusive con hechos validados; CI remota pendiente |
+| M7 | Eval de citas y unsupported claims | Implementado y validado localmente | 11 casos; status 1,00 y cero en evidencia irresoluble, acusaciones, promociones, accepted no soportado y tools |
 | M8 | Grafo de transacciones y UI con evidencia | Especificado; pendiente | sin frontend |
 | M9 | Evals de reconstrucción, eventos y contratos | Especificado; pendiente | tests M0–M2 no son estos benchmarks |
 | M9 | Evals de tools, citas, retrieval y unsupported claims | Especificado; pendiente | sin agentes/corpus |
@@ -74,4 +76,4 @@ Actualizado: 2026-09-29, después de crear el change OpenSpec de M7. Implementad
 | M11 | Demo pública educativa y hosting | Pendiente | sólo CLI local |
 | Exclusiones | Inversiones, bot financiero, custodia, firma, envío de fondos | Fuera de alcance | sin signer ni métodos RPC mutantes |
 
-Siguiente hito: **implementar M7** según `openspec/changes/add-evidence-review-pipeline`. No hay código de Evidence/Reviewer ni reportes accepted todavía. Tracing, proveedores remotos y nuevas redes también requieren contratos/configuración explícita antes de habilitarse.
+Pendiente de M7: ejecutar la CI Linux remota (tarea 3.1). Siguiente hito propuesto: **M8 — grafo de transacciones y UI con evidencia**, que debe comenzar con su propio change OpenSpec. Tracing, proveedores remotos y nuevas redes también requieren contratos/configuración explícita antes de habilitarse.
