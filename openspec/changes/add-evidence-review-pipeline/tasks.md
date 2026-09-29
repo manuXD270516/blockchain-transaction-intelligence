@@ -14,4 +14,4 @@
 
 ## Entorno
 
-- [ ] 3.1 Ejecutar CI Linux remota con red aislada antes de archivar.
+- [ ] 3.1 Ejecutar CI Linux remota con red aislada antes de archivar. Omitida por decisión del usuario el 2026-09-29: el run 36534722111 no se inició por facturación de la cuenta GitHub.
