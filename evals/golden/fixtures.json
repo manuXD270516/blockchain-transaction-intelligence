@@ -1,0 +1,72 @@
+{
+  "schema_version": "1.0.0",
+  "golden_version": "golden/1.0.0",
+  "source": "Hand-written from scripts/generate-fixtures.mjs; not derived from system output.",
+  "cases": [
+    {
+      "fixture_id": "synthetic-native-success",
+      "family": "native",
+      "split": "dev",
+      "execution_status": "success",
+      "tuples": [
+        { "actor": "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb", "action": "transaction_declared", "object": "0xcccccccccccccccccccccccccccccccccccccccc", "amount": "1000000000000000000", "status": "success" }
+      ],
+      "events": [],
+      "anomalies": [],
+      "unidentifiable_contracts": []
+    },
+    {
+      "fixture_id": "synthetic-reverted",
+      "family": "revert",
+      "split": "test",
+      "execution_status": "reverted",
+      "tuples": [
+        { "actor": "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb", "action": "transaction_declared", "object": "0xcccccccccccccccccccccccccccccccccccccccc", "amount": "1000000000000000000", "status": "reverted" }
+      ],
+      "events": [],
+      "anomalies": ["receipt_reports_reverted"],
+      "unidentifiable_contracts": []
+    },
+    {
+      "fixture_id": "synthetic-pending",
+      "family": "pending",
+      "split": "test",
+      "execution_status": "pending",
+      "tuples": [
+        { "actor": "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb", "action": "transaction_declared", "object": "0xcccccccccccccccccccccccccccccccccccccccc", "amount": "1000000000000000000", "status": "pending" }
+      ],
+      "events": [],
+      "anomalies": [],
+      "unidentifiable_contracts": []
+    },
+    {
+      "fixture_id": "synthetic-token-events",
+      "family": "token-events",
+      "split": "test",
+      "execution_status": "success",
+      "tuples": [
+        { "actor": "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb", "action": "transaction_declared", "object": "0xcccccccccccccccccccccccccccccccccccccccc", "amount": "1000000000000000000", "status": "success" },
+        { "actor": "0x1111111111111111111111111111111111111111", "action": "token_transfer_reported", "object": "0xdddddddddddddddddddddddddddddddddddddddd#-", "amount": "42", "status": "success" },
+        { "actor": "0x2222222222222222222222222222222222222222", "action": "token_transfer_reported", "object": "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee#99", "amount": "1", "status": "success" },
+        { "actor": "0x1111111111111111111111111111111111111111", "action": "token_transfer_reported", "object": "0xffffffffffffffffffffffffffffffffffffffff#7", "amount": "3", "status": "success" },
+        { "actor": "0x1111111111111111111111111111111111111111", "action": "token_transfer_reported", "object": "0x8888888888888888888888888888888888888888#1", "amount": "10", "status": "success" },
+        { "actor": "0x1111111111111111111111111111111111111111", "action": "token_transfer_reported", "object": "0x8888888888888888888888888888888888888888#2", "amount": "20", "status": "success" }
+      ],
+      "events": [
+        { "emitter": "0xdddddddddddddddddddddddddddddddddddddddd", "log_index": "0", "event_name": "Transfer", "standard_candidate": "ERC-20" },
+        { "emitter": "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee", "log_index": "1", "event_name": "Transfer", "standard_candidate": "ERC-721" },
+        { "emitter": "0xffffffffffffffffffffffffffffffffffffffff", "log_index": "2", "event_name": "TransferSingle", "standard_candidate": "ERC-1155" },
+        { "emitter": "0x8888888888888888888888888888888888888888", "log_index": "3", "event_name": "TransferBatch", "standard_candidate": "ERC-1155" },
+        { "emitter": "0x9999999999999999999999999999999999999999", "log_index": "4", "event_name": null, "standard_candidate": null }
+      ],
+      "anomalies": [],
+      "unidentifiable_contracts": [
+        "0xdddddddddddddddddddddddddddddddddddddddd",
+        "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+        "0xffffffffffffffffffffffffffffffffffffffff",
+        "0x8888888888888888888888888888888888888888",
+        "0x9999999999999999999999999999999999999999"
+      ]
+    }
+  ]
+}
