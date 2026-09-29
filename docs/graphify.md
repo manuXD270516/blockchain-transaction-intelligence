@@ -2,7 +2,7 @@
 
 Instalado: Graphify-Labs `graphifyy==0.9.67`, entorno aislado `.tools/graphify`, Python 3.14.7. Dependencias instaladas en scripts/graphify-requirements.lock.txt. Es tooling local, no el servicio hospedado graphify.com ni una suscripción configurada. No se ha medido un porcentaje de ahorro de tokens.
 
-Verificado tras M5: extracción AST local de 31 archivos `src` (298 nodos y 918 aristas), consulta CLI y handshake MCP + query_graph exitosos (10 tools anunciadas). El índice se regenera al cambiar código; cifras posteriores pueden variar. No se enviaron archivos a modelos: code-only, sin clustering semántico ni API keys.
+Verificado tras M6: extracción AST local de 38 archivos `src` (366 nodos y 1.106 aristas), consulta CLI y handshake MCP + query_graph exitosos (10 tools anunciadas). El índice se regenera al cambiar código; cifras posteriores pueden variar. No se enviaron archivos a modelos: code-only, sin clustering semántico ni API keys.
 
 ```powershell
 ./scripts/graphify.ps1 extract . --code-only --no-cluster --max-workers 1

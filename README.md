@@ -2,9 +2,9 @@
 
 Plataforma analítica y educativa para investigar transacciones EVM mediante datos públicos, MCP, agentes y RAG con evidencia verificable.
 
-**Estado: M0–M5 implementados y verificados local y remotamente.** Hay replay offline, adapter Ethereum Sepolia de sólo lectura, normalización canónica, extracción estricta de eventos estándar, servidor MCP stdio y retrieval documental versionado. M6–M11 siguen pendientes. No firma, custodia, invierte, despliega contratos ni mueve fondos, tampoco en testnet.
+**Estado: M0–M6 implementados; M6 verificado localmente y M0–M5 también remotamente.** Hay replay offline, adapter Ethereum Sepolia de sólo lectura, normalización canónica, extracción estricta de eventos estándar, servidor MCP stdio, retrieval documental versionado y orquestación analítica acotada. M7–M11 siguen pendientes. No firma, custodia, invierte, despliega contratos ni mueve fondos, tampoco en testnet.
 
-[Listado completo de funcionalidades y status](docs/feature-status.md) · [Validación M0–M5](docs/verification.md)
+[Listado completo de funcionalidades y status](docs/feature-status.md) · [Validación M0–M6](docs/verification.md)
 
 ## Ejecutar
 
@@ -89,6 +89,19 @@ npm run rag:eval
 
 `search_protocol_docs` admite `query`, `protocol`, `version`, `chain_id` y `top_k≤10`. Los scores son ordinales, no probabilidades. Hits incompatibles se etiquetan `conflicting`; una consulta sin soporte devuelve `ok`, lista vacía y `NO_RELEVANT_DOCUMENTS`. El contenido recuperado no puede cambiar permisos ni ejecutar instrucciones, y M5 todavía no crea claims ni decide entailment final.
 
+## Orquestación analítica M6
+
+M6 añade baseline determinístico, Transaction Analyst, Contract Analyst, claims tipados y un orquestador que aplica allowlists por rol, snapshot único, evidencia resoluble, 24 tools, 20.000 tokens de entrada, 4.000 de salida, deadline de 90 s y una sola corrección de schema.
+
+```powershell
+npm run analyze -- synthetic-native-success
+npm run agent:eval
+```
+
+No hay proveedor remoto habilitado ni secretos configurados. `analyze` produce offline el baseline como `inconclusive` con `MODEL_PROVIDER_NOT_CONFIGURED`; el provider scripted se usa sólo en tests/evals para verificar roles y presupuestos. La gate actual obtiene tool selection `1,00` en 5 casos y cero ejecuciones prohibidas.
+
+La salida es un `analysis_draft`: claims OBSERVED/RULE-BASED del baseline y MODEL-INFERRED de analistas permanecen `proposed`. Evidence Agent, Reviewer, revisión semántica y reportes accepted pertenecen a M7; `complete` en M6 sólo significa finalización estructural, no aprobación.
+
 ## Estructura y límites
 
 - `src/fixtures`: manifest validado, loader y verificación de integridad.
@@ -96,6 +109,7 @@ npm run rag:eval
 - `src/normalization`: normalizador puro, cantidades exactas y evidencia de fuentes/derivaciones.
 - `src/events`: decodificador estricto, transferencias event-reported y grafo base.
 - `src/rag`: loader de snapshots, WordPiece/MiniLM WASM y retrieval híbrido; las CLIs administrativas/eval están en `src/rag-*.ts`.
+- `src/agents`: claims, baseline, provider interface y orquestador acotado; `src/analyze-cli.ts` ofrece replay analítico offline.
 - `src/mcp`: dispatcher, schemas, envelopes, errores públicos y cursores autenticados; `src/mcp-cli.ts` es el entrypoint stdio.
 - `corpus`: allowlist fijada y snapshot inmutable M5; staging de ingesta no se versiona.
 - `evals`: qrels versionados y gates de retrieval.
@@ -109,7 +123,7 @@ Los hashes detectan cambios respecto al manifest, no prueban autenticidad del pr
 
 ## OpenSpec
 
-Changes de implementación: [M0 bootstrap](openspec/changes/bootstrap-offline-foundation/proposal.md), [M1 adapter](openspec/changes/add-ethereum-readonly-adapter/proposal.md), [M2 normalización](openspec/changes/normalize-transaction-evidence/proposal.md), [M3 eventos](openspec/changes/extract-standard-token-events/proposal.md), [M4 MCP](openspec/changes/add-readonly-mcp-server/proposal.md) y [M5 RAG](openspec/changes/add-versioned-protocol-rag/proposal.md).
+Changes de implementación: [M0 bootstrap](openspec/changes/bootstrap-offline-foundation/proposal.md), [M1 adapter](openspec/changes/add-ethereum-readonly-adapter/proposal.md), [M2 normalización](openspec/changes/normalize-transaction-evidence/proposal.md), [M3 eventos](openspec/changes/extract-standard-token-events/proposal.md), [M4 MCP](openspec/changes/add-readonly-mcp-server/proposal.md), [M5 RAG](openspec/changes/add-versioned-protocol-rag/proposal.md) y [M6 orquestación](openspec/changes/add-bounded-analysis-orchestrator/proposal.md).
 
 Primer change: [define-transaction-intelligence-foundation](openspec/changes/define-transaction-intelligence-foundation/proposal.md).
 

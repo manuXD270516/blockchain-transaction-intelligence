@@ -1,6 +1,6 @@
 # Funcionalidades y status
 
-Actualizado: 2026-09-29, después de M5. Implementado significa código ejecutable; validado no implica todos los requisitos M0–M11 completos. Las especificaciones de fundación siguen abiertas.
+Actualizado: 2026-09-29, después de M6 local. Implementado significa código ejecutable; validado no implica todos los requisitos M0–M11 completos. Las especificaciones de fundación siguen abiertas.
 
 | Hito | Funcionalidad | Estado | Evidencia / límite |
 |---|---|---|---|
@@ -54,9 +54,12 @@ Actualizado: 2026-09-29, después de M5. Implementado significa código ejecutab
 | M5 | Búsqueda híbrida y filtros | Implementado y validado localmente | BM25 + MiniLM 384d local + cosine + RRF; filtros protocol/version/chain |
 | M5 | Citas, compatibilidad y abstención | Implementado y validado localmente | matched/generic/unknown/conflicting; no-answer→[]; contenido hostil no amplía autoridad |
 | M5 | Qrels y gates de retrieval | Implementado y validado localmente | Recall@5 1,00; MRR@10 0,867; abstención 1,00; versión segura |
-| M6 | Transaction Analyst | Especificado; pendiente | sin llamadas a modelos |
-| M6 | Contract Analyst | Especificado; pendiente | sin llamadas a modelos |
-| M6 | Orquestador, límites por rol y presupuestos LLM | Especificado; pendiente | presupuesto RPC M1 no equivale al de agentes |
+| M6 | Baseline determinístico | Implementado y validado localmente | claims OBSERVED/RULE-BASED con evidencia; disponible aunque falte modelo |
+| M6 | Transaction Analyst | Implementado con provider inyectable y validado offline | tools por rol y claims MODEL-INFERRED; sin provider remoto habilitado |
+| M6 | Contract Analyst | Implementado con provider inyectable y validado offline | docs incompatibles no sustentan claims; identidad unknown preservada |
+| M6 | Orquestador y presupuestos | Implementado y validado localmente | 90 s, 24 tools, 20k/4k tokens, 5 llamadas modelo y una corrección |
+| M6 | Tool selection y policy | Implementado y validado localmente | 1,00 en 5 casos; cero ejecuciones prohibidas |
+| M6 | Reporte aceptado/revisado | Diferido explícitamente a M7 | M6 entrega analysis_draft con claims proposed y REVIEW_NOT_RUN |
 | M7 | Evidence Agent | Especificado; pendiente | validadores de adquisición no sustituyen este rol |
 | M7 | Reviewer Agent | Especificado; pendiente | sin revisión semántica |
 | M7 | Claims OBSERVED/RULE-BASED/MODEL-INFERRED | Especificado; pendiente | aún no se generan claims |
@@ -71,4 +74,4 @@ Actualizado: 2026-09-29, después de M5. Implementado significa código ejecutab
 | M11 | Demo pública educativa y hosting | Pendiente | sólo CLI local |
 | Exclusiones | Inversiones, bot financiero, custodia, firma, envío de fondos | Fuera de alcance | sin signer ni métodos RPC mutantes |
 
-Siguiente hito propuesto: **M6 — agentes analistas y orquestación acotada**, pero debe comenzar con su propio change OpenSpec. Tracing y nuevas redes también requieren contratos separados antes de habilitarse.
+Siguiente hito propuesto: **M7 — Evidence Agent, Reviewer y reporte revisado**, pero debe comenzar con su propio change OpenSpec. Tracing, proveedores remotos y nuevas redes también requieren contratos/configuración explícita antes de habilitarse.

@@ -1,9 +1,9 @@
-# Verificación M0–M5
+# Verificación M0–M6
 
 Entorno local: Windows, Node 22.23.1, npm 10.9.8, TypeScript 5.9.3, OpenSpec 1.11.0. Fecha: 2026-09-29.
 
-- `npm run check`: typecheck estricto y build correctos; 126 tests, 125 aprobados, 0 fallidos y 1 omitido en Windows (symlink de archivo).
-- `openspec validate --all --strict --no-interactive`: 8 changes válidos, 0 errores.
+- `npm run check`: typecheck estricto y build correctos; 135 tests, 134 aprobados, 0 fallidos y 1 omitido en Windows (symlink de archivo).
+- `openspec validate --all --strict --no-interactive`: 9 changes válidos, 0 errores.
 - Regeneración de fixtures con comparación SHA-256 antes/después: 0 archivos modificados.
 - M0: replay de tres fixtures sintéticos, integridad SHA-256, esquemas, límites de archivo, escape de directorio, estados y CLI offline determinístico.
 - M1: respuestas RPC sintéticas en test/data/sepolia-synthetic.json; chain mismatch, reorg, logs ajenos, pending, not_found, missing receipt/block, errores pruned/unsupported, reintentos, budgets, timeout/abort, JSON-RPC envelopes y tamaños.
@@ -16,14 +16,18 @@ Entorno local: Windows, Node 22.23.1, npm 10.9.8, TypeScript 5.9.3, OpenSpec 1.1
 - El entrypoint compilado stdio se ejecutó bajo guard offline con un cliente MCP real: negociación moderna, 9 tools, tracing `unavailable` y `search_protocol_docs` activo con una cita ERC-721. El proceso no abrió red.
 - Una prueba adicional lanzó exactamente `npm run mcp`: protocolo moderno, 9 tools, búsqueda ERC-1155 `ok`, 2 hits, primer documento `eip-1155` y stderr vacío.
 - MiniLM se ejecuta localmente mediante `onnxruntime-web` WASM y WordPiece fijado; `npm ci --ignore-scripts` no necesita binarios nativos ni postinstall. El modelo ONNX, vocabulario y archivos de configuración están incluidos en el manifest con licencia Apache-2.0 y hashes.
+- M6: baseline content-addressed, claims OBSERVED/RULE-BASED/MODEL-INFERRED, provider manifest, roles Transaction/Contract, allowlists, argumentos cerrados, snapshot único, tool journal, presupuestos, timeout y una corrección máxima. Claims de otro run, atribuciones prohibidas y docs conflicting son rechazados.
+- `npm run agent:eval`: 5 casos, tool selection 1,00 y 0 ejecuciones prohibidas. Incluye receipt permitido, docs fuera de rol, balance no solicitado/solicitado y expansión de argumentos.
+- `npm run analyze -- synthetic-native-success` opera offline sin provider: conserva baseline, devuelve inconclusive/MODEL_PROVIDER_NOT_CONFIGURED y declara REVIEW_NOT_RUN.
 - El guard MCP bloquea APIs HTTP/HTTPS/TCP/TLS, `fetch` y WebSocket sin interferir con stdio. Es un guard de regresión para el proceso confiable, no un sandbox para código hostil.
-- Graphify se regeneró en modo code-only, sin clustering ni APIs de modelos: 298 nodos y 918 aristas.
+- Graphify se regeneró en modo code-only, sin clustering ni APIs de modelos: 366 nodos y 1.106 aristas.
 - El guard local bloquea imports de red/fetch/WebSocket para CLI offline y tiene prueba negativa propia. No constituye aislamiento de código hostil.
 - GitHub Actions `Offline foundation` ejecutado en Linux sobre `76a96b2`: job `verify` aprobado en 37 s. Incluyó instalación reproducible, typecheck, build, tests dentro de un network namespace sin conectividad, symlink de archivo y regeneración de fixtures sin diff. Run: https://github.com/manuXD270516/blockchain-transaction-intelligence/actions/runs/36526037696.
 - GitHub Actions ejecutado sobre M5 `a68be96`: job `verify` aprobado en 49 s; 126 tests, 126 aprobados, 0 fallidos y 0 omitidos dentro del network namespace sin conectividad. Run: https://github.com/manuXD270516/blockchain-transaction-intelligence/actions/runs/36529005511.
 - El test de symlink de archivo se omite localmente en Windows y se ejecutó en la CI Linux; el escape mediante junction sí se ejecutó localmente.
 - No se ejecutó una lectura live nueva para M4: la verificación MCP usó backends simulados y la llamada stdio a una capacidad diferida que no consulta RPC.
 - Para construir M5 se descargaron explícitamente, y sólo durante la fase administrativa, fuentes públicas fijadas de GitHub y el modelo ONNX fijado de Hugging Face. Búsqueda, MCP, evals y tests se ejecutaron offline. No se realizó ninguna lectura blockchain live nueva.
+- M6 no realizó llamadas a modelos ni blockchain live. El provider scripted es un double determinístico dentro del proceso; no hay credenciales, endpoint remoto ni política de terceros activa.
 
 ## Smoke live ejecutado
 

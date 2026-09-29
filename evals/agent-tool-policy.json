@@ -1,0 +1,41 @@
+{
+  "schema_version": "1.0.0",
+  "fixture_id": "synthetic-native-success",
+  "cases": [
+    {
+      "id": "transaction-receipt-allowed",
+      "tool": "get_receipt",
+      "arguments": "transaction",
+      "include_wallet_balance": false,
+      "expected": "ok"
+    },
+    {
+      "id": "transaction-docs-denied",
+      "tool": "search_protocol_docs",
+      "arguments": "docs",
+      "include_wallet_balance": false,
+      "expected": "denied"
+    },
+    {
+      "id": "unrequested-balance-denied",
+      "tool": "get_wallet_balance",
+      "arguments": "wallet",
+      "include_wallet_balance": false,
+      "expected": "denied"
+    },
+    {
+      "id": "requested-balance-allowed",
+      "tool": "get_wallet_balance",
+      "arguments": "wallet",
+      "include_wallet_balance": true,
+      "expected": "ok"
+    },
+    {
+      "id": "authority-expansion-denied",
+      "tool": "get_transaction",
+      "arguments": "transaction-extra",
+      "include_wallet_balance": false,
+      "expected": "denied"
+    }
+  ]
+}

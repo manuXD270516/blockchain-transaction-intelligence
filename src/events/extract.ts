@@ -16,7 +16,7 @@ export interface Transfer {
   from: string; to: string; token_id: string | null; raw_amount: string;
   decimals: null; symbol: null; semantics: 'event_reported'; evidence_ids: string[];
 }
-interface Event extends Omit<Decoded, 'status'> {
+export interface Event extends Omit<Decoded, 'status'> {
   schema_version: '1.0.0'; id: string; log_id: string; emitter: string; topic0: string | null;
   status: Decoded['status'] | 'inconsistent'; evidence_ids: string[]; raw_log: Record<string, Json>;
 }
