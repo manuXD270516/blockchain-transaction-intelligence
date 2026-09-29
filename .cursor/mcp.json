@@ -1,0 +1,10 @@
+{
+  "mcpServers": {
+    "blockchain-transaction-intelligence": {
+      "command": "node",
+      "args": [
+        "dist/mcp-cli.js"
+      ]
+    }
+  }
+}

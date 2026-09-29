@@ -1,6 +1,6 @@
 import { McpServer } from '@modelcontextprotocol/server';
 import * as z from 'zod';
-import { BlockchainMcpService } from './service.js';
+import { BlockchainMcpService, PUBLIC_ERROR_CODES } from './service.js';
 
 const chainId = z.literal('11155111');
 const hash = z.string().regex(/^0x[0-9a-f]{64}$/);
@@ -34,7 +34,7 @@ const successOutput = z.strictObject({ schema_version: z.literal('1.0.0'), reque
   coverage: z.looseObject({ scope: z.string(), complete: z.boolean(), missing: z.array(z.string()), truncated: z.boolean() }),
   warnings: z.array(z.string()), page: z.union([z.strictObject({ next_cursor: z.union([z.string(), z.null()]) }), z.null()]) });
 const errorOutput = z.strictObject({ schema_version: z.literal('1.0.0'), request_id: z.string(),
-  error: z.strictObject({ code: z.string(), message: z.string(), retryable: z.boolean() }), evidence_ids: z.array(z.string()) });
+  error: z.strictObject({ code: z.enum(PUBLIC_ERROR_CODES), message: z.string(), retryable: z.boolean() }), evidence_ids: z.array(z.string()) });
 const output = z.union([successOutput, errorOutput]);
 const descriptions: Record<keyof typeof schemas, string> = {
   get_transaction: 'Get and normalize one Sepolia transaction.',

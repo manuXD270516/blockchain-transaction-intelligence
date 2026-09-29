@@ -13,6 +13,9 @@ import { CursorCodec, CursorError } from './cursor.js';
 export const TOOL_NAMES = ['get_transaction', 'get_receipt', 'get_block', 'get_wallet_balance', 'get_token_transfers',
   'get_contract', 'get_contract_events', 'trace_transaction', 'search_protocol_docs'] as const;
 export type ToolName = typeof TOOL_NAMES[number];
+export const PUBLIC_ERROR_CODES = ['UNSUPPORTED_CHAIN', 'INVALID_INPUT', 'INVALID_CURSOR', 'POLICY_DENIED',
+  'RATE_LIMITED', 'TIMEOUT', 'PROVIDER_ERROR', 'INCONSISTENT_SNAPSHOT', 'BUDGET_EXCEEDED'] as const;
+type PublicErrorCode = typeof PUBLIC_ERROR_CODES[number];
 export interface McpBackend {
   investigate(hash: string): Promise<Investigation>;
   getBlock(ref: BlockRef): Promise<BlockRead<JsonObject>>;
@@ -25,7 +28,10 @@ const MAX_RESPONSE = 2 * 1024 * 1024;
 
 function object(value: unknown): value is Record<string, unknown> { return typeof value === 'object' && value !== null && !Array.isArray(value); }
 function exact(value: Record<string, unknown>, keys: readonly string[]): boolean { return Object.keys(value).every(k => keys.includes(k)); }
-function chain(value: unknown): void { if (value !== SEPOLIA_CHAIN_ID) throw new AdapterError(value === undefined ? 'INVALID_INPUT' : 'UNSUPPORTED_CHAIN'); }
+function chain(value: unknown): void {
+  if (typeof value !== 'string' || !/^[1-9][0-9]*$/.test(value)) throw new AdapterError('INVALID_INPUT');
+  if (value !== SEPOLIA_CHAIN_ID) throw new AdapterError('UNSUPPORTED_CHAIN');
+}
 function hash(value: unknown): asserts value is string { if (typeof value !== 'string' || !HASH.test(value)) throw new AdapterError('INVALID_INPUT'); }
 function address(value: unknown): asserts value is string { if (typeof value !== 'string' || !ADDRESS.test(value)) throw new AdapterError('INVALID_INPUT'); }
 function blockRef(value: unknown): BlockRef {
@@ -45,7 +51,8 @@ function provenance(items: readonly Evidence[], mode: Investigation['mode'] | 't
     fetched_at: observed(items), raw_content_hash: items.length ? sha256(canonical(items.map(v => v.sha256))) : null };
 }
 function envelope(status: 'ok' | 'partial' | 'not_found' | 'unavailable', data: unknown, evidence: readonly Evidence[], snap: Snapshot | null,
-  coverage: { scope: string; complete: boolean; missing?: string[]; truncated?: boolean }, warnings: readonly string[], page: { next_cursor: string | null } | null,
+  coverage: { scope: string; complete: boolean; missing?: string[]; truncated?: boolean; snapshot_manifest_hash?: string },
+  warnings: readonly string[], page: { next_cursor: string | null } | null,
   mode: Investigation['mode'] | 'testnet_live' = 'testnet_live', extraEvidenceIds: readonly string[] = []) {
   return { schema_version: '1.0.0', request_id: randomUUID(), status, data,
     evidence_ids: [...new Set([...evidenceIds(evidence), ...extraEvidenceIds])],
@@ -69,9 +76,17 @@ export class BlockchainMcpService {
       if (Buffer.byteLength(text) > MAX_RESPONSE) throw new AdapterError('SIZE_LIMIT');
       return { content: [{ type: 'text', text }], structuredContent: result };
     } catch (error) {
-      const code = error instanceof CursorError ? 'INVALID_CURSOR' : error instanceof AdapterError ? error.code : 'PROVIDER_ERROR';
+      if (error instanceof AdapterError && (error.code === 'UNSUPPORTED_CAPABILITY' || error.code === 'PRUNED_STATE')) {
+        const result = envelope('unavailable', null, error.evidence, null,
+          { scope: TOOL_NAMES.includes(name as ToolName) ? name : 'unknown', complete: false, missing: [error.code] },
+          [error.code], null);
+        result.request_id = id;
+        const text = JSON.stringify(result);
+        return { content: [{ type: 'text', text }], structuredContent: result };
+      }
+      const code = publicErrorCode(error);
       const body = { schema_version: '1.0.0', request_id: id, error: { code,
-        message: code === 'INVALID_INPUT' ? 'Input does not match the tool contract.' : code,
+        message: publicErrorMessage(code),
         retryable: error instanceof AdapterError && error.retryable }, evidence_ids: error instanceof AdapterError ? evidenceIds(error.evidence) : [] };
       return { content: [{ type: 'text', text: JSON.stringify(body) }], structuredContent: body, isError: true };
     }
@@ -81,6 +96,15 @@ export class BlockchainMcpService {
     if (name === 'search_protocol_docs') {
       if (!exact(input, ['query', 'chain_id', 'protocol', 'version', 'top_k']) || typeof input.query !== 'string'
         || input.query.length < 1 || input.query.length > 2000) throw new AdapterError('INVALID_INPUT');
+      if (input.chain_id !== undefined) chain(input.chain_id);
+      for (const key of ['protocol', 'version'] as const) {
+        if (input[key] !== undefined && (typeof input[key] !== 'string' || input[key].length < 1 || input[key].length > 100)) {
+          throw new AdapterError('INVALID_INPUT');
+        }
+      }
+      if (input.top_k !== undefined && (!Number.isInteger(input.top_k) || (input.top_k as number) < 1 || (input.top_k as number) > 10)) {
+        throw new AdapterError('INVALID_INPUT');
+      }
       return envelope('unavailable', null, [], null, { scope: 'protocol-corpus', complete: false, missing: ['corpus'] }, ['CORPUS_NOT_CONFIGURED'], null);
     }
     if (!exact(input, allowed(name))) throw new AdapterError('INVALID_INPUT');
@@ -90,7 +114,9 @@ export class BlockchainMcpService {
       return envelope('unavailable', null, [], null, { scope: 'call-trace', complete: false, missing: ['trace'] }, ['UNSUPPORTED_CAPABILITY'], null);
     }
     if (name === 'get_transaction' || name === 'get_receipt' || name === 'get_token_transfers') {
-      hash(input.tx_hash); const investigation = await this.backend.investigate(input.tx_hash);
+      hash(input.tx_hash);
+      const requestedPageLimit = name === 'get_token_transfers' ? pageLimit(input) : null;
+      const investigation = await this.backend.investigate(input.tx_hash);
       if (investigation.chain_id !== SEPOLIA_CHAIN_ID) throw new AdapterError('INCONSISTENT_SNAPSHOT');
       if (name === 'get_transaction') {
         const normalized = normalizeInvestigation(investigation);
@@ -107,7 +133,7 @@ export class BlockchainMcpService {
           normalized.evidence.map(value => value.evidence_id));
       }
       const extracted = extractTokenEvents(investigation);
-      const query = sha256(extracted.extraction_id); const limit = pageLimit(input); const offset = input.cursor === undefined ? 0
+      const query = sha256(extracted.extraction_id); const limit = requestedPageLimit!; const offset = input.cursor === undefined ? 0
         : this.cursors.decode(input.cursor as string, name, query);
       if (offset > extracted.transfers.length) throw new CursorError();
       const transfers = extracted.transfers.slice(offset, offset + limit); const more = offset + transfers.length < extracted.transfers.length;
@@ -150,24 +176,26 @@ export class BlockchainMcpService {
     const limit = input.limit === undefined ? 50 : input.limit;
     if (!Number.isInteger(limit) || (limit as number) < 1 || (limit as number) > 100 || (input.cursor !== undefined && typeof input.cursor !== 'string')) throw new AdapterError('INVALID_INPUT');
     const all: JsonObject[] = []; const evidence: Evidence[] = []; let snap: Snapshot | null = null;
-    const snapshots: string[] = [];
+    const snapshots: { block_number: string; block_hash: string }[] = [];
     for (let block = from; block <= to; block++) {
       const read = await this.backend.getLogs(input.address, { number: block.toString() }); snap = read.snapshot;
-      snapshots.push(read.snapshot.block_hash); evidence.push(...read.evidence);
+      snapshots.push({ block_number: read.snapshot.block_number, block_hash: read.snapshot.block_hash }); evidence.push(...read.evidence);
       for (const log of read.data as JsonObject[]) {
         const wanted = input.topics as (string | null)[] | undefined;
         if (!wanted || wanted.every((topic, index) => topic === null || (log.topics as Json[])[index] === topic)) all.push(log);
       }
     }
     all.sort((a, b) => compareLog(a, b));
+    const snapshotManifestHash = sha256(canonical(snapshots));
     const query = sha256(canonical({ address: input.address, from: input.from_block, to: input.to_block,
-      topics: input.topics ?? null, snapshots }));
+      topics: input.topics ?? null, snapshot_manifest_hash: snapshotManifestHash }));
     const offset = input.cursor === undefined ? 0 : this.cursors.decode(input.cursor as string, 'get_contract_events', query);
     if (offset > all.length) throw new CursorError();
     const page = all.slice(offset, offset + (limit as number)); const next = offset + page.length < all.length
       ? this.cursors.encode('get_contract_events', query, offset + page.length) : null;
     const decoded = page.map(raw => ({ raw, decoded: decodeStandardEvent(raw.topics as string[], raw.data as string) }));
-    return envelope(next ? 'partial' : 'ok', decoded, evidence, snap, { scope: 'contract-events-inclusive-range', complete: next === null, truncated: next !== null }, [], { next_cursor: next });
+    return envelope(next ? 'partial' : 'ok', decoded, evidence, snap, { scope: 'contract-events-inclusive-range',
+      complete: next === null, truncated: next !== null, snapshot_manifest_hash: snapshotManifestHash }, [], { next_cursor: next });
   }
 }
 
@@ -189,4 +217,19 @@ function compareLog(a: JsonObject, b: JsonObject): number {
     if (difference) return difference < 0n ? -1 : 1;
   }
   return 0;
+}
+
+function publicErrorCode(error: unknown): PublicErrorCode {
+  if (error instanceof CursorError) return 'INVALID_CURSOR';
+  if (!(error instanceof AdapterError)) return 'PROVIDER_ERROR';
+  if (error.code === 'SIZE_LIMIT') return 'BUDGET_EXCEEDED';
+  return PUBLIC_ERROR_CODES.includes(error.code as PublicErrorCode) ? error.code as PublicErrorCode : 'PROVIDER_ERROR';
+}
+
+function publicErrorMessage(code: PublicErrorCode): string {
+  if (code === 'INVALID_INPUT') return 'Input does not match the tool contract.';
+  if (code === 'INVALID_CURSOR') return 'Cursor is invalid or expired.';
+  if (code === 'UNSUPPORTED_CHAIN') return 'Chain is not supported.';
+  if (code === 'BUDGET_EXCEEDED') return 'Call budget was exceeded.';
+  return 'The read operation could not be completed.';
 }

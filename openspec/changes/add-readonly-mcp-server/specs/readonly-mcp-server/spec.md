@@ -30,6 +30,12 @@ El servidor SHALL validar chain, hashes, direcciones, BlockRef, rangos, páginas
 ### Requirement: paginación ligada a consulta
 Los resultados paginados SHALL mantener orden determinístico y usar cursores autenticados, expirables y ligados a tool, consulta y snapshot.
 
+`get_contract_events.data` SHALL ser un array de elementos `{raw, decoded}`. `raw` SHALL conservar cada log RPC completo y `decoded` SHALL mantener separada la interpretación estándar derivada.
+
+#### Scenario: evento observado y decodificación derivada
+- **WHEN** `get_contract_events` devuelve un log
+- **THEN** el orden se determina por `raw.blockNumber`, `raw.transactionIndex` y `raw.logIndex`, y ningún campo derivado reemplaza al log raw
+
 #### Scenario: cursor reutilizado en otra consulta
 - **WHEN** un cursor válido se presenta con dirección, rango o transacción diferente
 - **THEN** la llamada falla con INVALID_CURSOR y no mezcla resultados
