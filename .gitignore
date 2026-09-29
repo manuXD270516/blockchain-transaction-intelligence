@@ -9,3 +9,5 @@ coverage/
 !.env.example
 *.tsbuildinfo
 *.log
+corpus/staging*/
+corpus/current/

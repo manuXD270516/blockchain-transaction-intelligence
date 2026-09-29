@@ -1,0 +1,163 @@
+{
+  "schema_version": "1.0.0",
+  "created_at": "2026-09-29T05:40:00.000Z",
+  "model": {
+    "id": "sentence-transformers/all-MiniLM-L6-v2",
+    "revision": "Xenova/all-MiniLM-L6-v2@751bff37182d3f1213fa05d7196b954e230abad9",
+    "license": "Apache-2.0",
+    "files": [
+      {
+        "url": "https://huggingface.co/Xenova/all-MiniLM-L6-v2/resolve/751bff37182d3f1213fa05d7196b954e230abad9/config.json",
+        "file": "config.json"
+      },
+      {
+        "url": "https://huggingface.co/Xenova/all-MiniLM-L6-v2/resolve/751bff37182d3f1213fa05d7196b954e230abad9/special_tokens_map.json",
+        "file": "special_tokens_map.json"
+      },
+      {
+        "url": "https://huggingface.co/Xenova/all-MiniLM-L6-v2/resolve/751bff37182d3f1213fa05d7196b954e230abad9/tokenizer.json",
+        "file": "tokenizer.json"
+      },
+      {
+        "url": "https://huggingface.co/Xenova/all-MiniLM-L6-v2/resolve/751bff37182d3f1213fa05d7196b954e230abad9/tokenizer_config.json",
+        "file": "tokenizer_config.json"
+      },
+      {
+        "url": "https://huggingface.co/Xenova/all-MiniLM-L6-v2/resolve/751bff37182d3f1213fa05d7196b954e230abad9/vocab.txt",
+        "file": "vocab.txt"
+      },
+      {
+        "url": "https://huggingface.co/Xenova/all-MiniLM-L6-v2/resolve/751bff37182d3f1213fa05d7196b954e230abad9/onnx/model_quantized.onnx",
+        "file": "onnx/model_quantized.onnx"
+      }
+    ]
+  },
+  "sources": [
+    {
+      "document_id": "eip-20",
+      "url": "https://raw.githubusercontent.com/ethereum/EIPs/9e393a79d9937f579acbdcb234a67869259d5a96/EIPS/eip-20.md",
+      "file": "eip-20.md",
+      "format": "markdown",
+      "canonical_uri": "https://github.com/ethereum/EIPs/blob/9e393a79d9937f579acbdcb234a67869259d5a96/EIPS/eip-20.md",
+      "publisher": "Ethereum Improvement Proposals",
+      "title": "ERC-20: Token Standard",
+      "protocol": "ethereum-standard",
+      "chain_id": null,
+      "deployments": [],
+      "version": null,
+      "commit": "9e393a79d9937f579acbdcb234a67869259d5a96",
+      "published_at": null,
+      "retrieved_at": "2026-09-29T05:40:00.000Z",
+      "license": "CC0-1.0",
+      "access_conditions": "Public repository snapshot; redistribution permitted by CC0-1.0.",
+      "trust_tier": "normative",
+      "audit": null
+    },
+    {
+      "document_id": "eip-721",
+      "url": "https://raw.githubusercontent.com/ethereum/EIPs/9e393a79d9937f579acbdcb234a67869259d5a96/EIPS/eip-721.md",
+      "file": "eip-721.md",
+      "format": "markdown",
+      "canonical_uri": "https://github.com/ethereum/EIPs/blob/9e393a79d9937f579acbdcb234a67869259d5a96/EIPS/eip-721.md",
+      "publisher": "Ethereum Improvement Proposals",
+      "title": "ERC-721: Non-Fungible Token Standard",
+      "protocol": "ethereum-standard",
+      "chain_id": null,
+      "deployments": [],
+      "version": null,
+      "commit": "9e393a79d9937f579acbdcb234a67869259d5a96",
+      "published_at": null,
+      "retrieved_at": "2026-09-29T05:40:00.000Z",
+      "license": "CC0-1.0",
+      "access_conditions": "Public repository snapshot; redistribution permitted by CC0-1.0.",
+      "trust_tier": "normative",
+      "audit": null
+    },
+    {
+      "document_id": "eip-1155",
+      "url": "https://raw.githubusercontent.com/ethereum/EIPs/9e393a79d9937f579acbdcb234a67869259d5a96/EIPS/eip-1155.md",
+      "file": "eip-1155.md",
+      "format": "markdown",
+      "canonical_uri": "https://github.com/ethereum/EIPs/blob/9e393a79d9937f579acbdcb234a67869259d5a96/EIPS/eip-1155.md",
+      "publisher": "Ethereum Improvement Proposals",
+      "title": "ERC-1155: Multi Token Standard",
+      "protocol": "ethereum-standard",
+      "chain_id": null,
+      "deployments": [],
+      "version": null,
+      "commit": "9e393a79d9937f579acbdcb234a67869259d5a96",
+      "published_at": null,
+      "retrieved_at": "2026-09-29T05:40:00.000Z",
+      "license": "CC0-1.0",
+      "access_conditions": "Public repository snapshot; redistribution permitted by CC0-1.0.",
+      "trust_tier": "normative",
+      "audit": null
+    },
+    {
+      "document_id": "openzeppelin-4.9.4-changelog",
+      "url": "https://raw.githubusercontent.com/OpenZeppelin/openzeppelin-contracts/0d5f54e69b2a2058bc98651a2e200f558c84a953/CHANGELOG.md",
+      "file": "openzeppelin-4.9.4-changelog.md",
+      "format": "markdown",
+      "canonical_uri": "https://github.com/OpenZeppelin/openzeppelin-contracts/blob/0d5f54e69b2a2058bc98651a2e200f558c84a953/CHANGELOG.md",
+      "publisher": "OpenZeppelin",
+      "title": "OpenZeppelin Contracts v4.9.4 Changelog",
+      "protocol": "openzeppelin-contracts",
+      "chain_id": null,
+      "deployments": [],
+      "version": "4.9.4",
+      "commit": "0d5f54e69b2a2058bc98651a2e200f558c84a953",
+      "published_at": null,
+      "retrieved_at": "2026-09-29T05:40:00.000Z",
+      "license": "MIT",
+      "access_conditions": "Public repository snapshot; redistribution permitted by MIT.",
+      "trust_tier": "publisher",
+      "audit": null
+    },
+    {
+      "document_id": "openzeppelin-5.0.2-changelog",
+      "url": "https://raw.githubusercontent.com/OpenZeppelin/openzeppelin-contracts/dbb6104ce834628e473d2173bbc9d47f81a9eec3/CHANGELOG.md",
+      "file": "openzeppelin-5.0.2-changelog.md",
+      "format": "markdown",
+      "canonical_uri": "https://github.com/OpenZeppelin/openzeppelin-contracts/blob/dbb6104ce834628e473d2173bbc9d47f81a9eec3/CHANGELOG.md",
+      "publisher": "OpenZeppelin",
+      "title": "OpenZeppelin Contracts v5.0.2 Changelog",
+      "protocol": "openzeppelin-contracts",
+      "chain_id": null,
+      "deployments": [],
+      "version": "5.0.2",
+      "commit": "dbb6104ce834628e473d2173bbc9d47f81a9eec3",
+      "published_at": null,
+      "retrieved_at": "2026-09-29T05:40:00.000Z",
+      "license": "MIT",
+      "access_conditions": "Public repository snapshot; redistribution permitted by MIT.",
+      "trust_tier": "publisher",
+      "audit": null
+    },
+    {
+      "document_id": "openzeppelin-5.0.0-audit",
+      "url": "https://raw.githubusercontent.com/OpenZeppelin/openzeppelin-contracts/dbb6104ce834628e473d2173bbc9d47f81a9eec3/audits/2023-10-v5.0.pdf",
+      "file": "openzeppelin-5.0.0-audit.pdf",
+      "format": "pdf",
+      "canonical_uri": "https://github.com/OpenZeppelin/openzeppelin-contracts/blob/dbb6104ce834628e473d2173bbc9d47f81a9eec3/audits/2023-10-v5.0.pdf",
+      "publisher": "OpenZeppelin",
+      "title": "OpenZeppelin Contracts v5.0 Audit",
+      "protocol": "openzeppelin-contracts",
+      "chain_id": null,
+      "deployments": [],
+      "version": "5.0.0",
+      "commit": "dbb6104ce834628e473d2173bbc9d47f81a9eec3",
+      "published_at": "2023-10-01T00:00:00.000Z",
+      "retrieved_at": "2026-09-29T05:40:00.000Z",
+      "license": "MIT",
+      "access_conditions": "Audit distributed in the MIT-licensed repository snapshot.",
+      "trust_tier": "audit",
+      "audit": {
+        "auditor": "OpenZeppelin",
+        "contract": "OpenZeppelin Contracts v5.0.0",
+        "commit": "b5a3e69",
+        "date": "2023-10-01",
+        "scope": "Changes introduced for OpenZeppelin Contracts v5.0."
+      }
+    }
+  ]
+}

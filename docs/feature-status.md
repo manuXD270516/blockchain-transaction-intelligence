@@ -1,6 +1,6 @@
 # Funcionalidades y status
 
-Actualizado: 2026-09-29, después de M4. Implementado significa código ejecutable; validado localmente no implica CI remota ni todos los requisitos M0–M11 completos. Las especificaciones de fundación siguen abiertas.
+Actualizado: 2026-09-29, después de M5 local. Implementado significa código ejecutable; validado localmente no implica todavía la CI remota de este commit ni todos los requisitos M0–M11 completos. Las especificaciones de fundación siguen abiertas.
 
 | Hito | Funcionalidad | Estado | Evidencia / límite |
 |---|---|---|---|
@@ -46,10 +46,14 @@ Actualizado: 2026-09-29, después de M4. Implementado significa código ejecutab
 | M4 | get_contract | Implementado y validado con RPC simulado | bytecode/hash; ABI, source y proxy preservados unknown |
 | M4 | get_contract_events | Implementado y validado con RPC simulado | máximo 100 bloques, `{raw, decoded}`, orden estable y cursor ligado a snapshots |
 | M4 | trace_transaction | Abstención implementada y validada | devuelve unavailable/UNSUPPORTED_CAPABILITY; no RPC debug |
-| M4 | search_protocol_docs | Abstención implementada y validada | devuelve unavailable/CORPUS_NOT_CONFIGURED; sin RAG |
+| M4/M5 | search_protocol_docs | Implementado y validado localmente | corpus local M5; unavailable/CORPUS_NOT_CONFIGURED si falta o no pasa integridad |
 | M4 | Envelopes, límites y errores públicos | Implementado y validado localmente | 100 elementos/página, 2 MiB, HMAC con expiración, mensajes sin eco de input/proveedor |
-| M5 | Ingesta de Ethereum/protocol/contract docs, patrones y auditorías | Especificado; pendiente | corpus aún no cargado |
-| M5 | Búsqueda híbrida, versionado, filtros y citas verificables | Especificado; pendiente | sin índice/embeddings |
+| M5 | Corpus curado y versionado | Implementado y validado localmente | 6 documentos/139 chunks; EIPs CC0, OpenZeppelin MIT, dos majors incompatibles y auditoría con alcance |
+| M5 | Ingesta administrativa allowlisted | Implementado y validado localmente | lock SHA-256, hosts/DNS públicos, límites, Markdown/PDF; única fase con red |
+| M5 | Loader de snapshots inmutables | Implementado y validado localmente | rutas, tamaños, hashes, modelo, vectores y spans exactos verificados antes de buscar |
+| M5 | Búsqueda híbrida y filtros | Implementado y validado localmente | BM25 + MiniLM 384d local + cosine + RRF; filtros protocol/version/chain |
+| M5 | Citas, compatibilidad y abstención | Implementado y validado localmente | matched/generic/unknown/conflicting; no-answer→[]; contenido hostil no amplía autoridad |
+| M5 | Qrels y gates de retrieval | Implementado y validado localmente | Recall@5 1,00; MRR@10 0,867; abstención 1,00; versión segura |
 | M6 | Transaction Analyst | Especificado; pendiente | sin llamadas a modelos |
 | M6 | Contract Analyst | Especificado; pendiente | sin llamadas a modelos |
 | M6 | Orquestador, límites por rol y presupuestos LLM | Especificado; pendiente | presupuesto RPC M1 no equivale al de agentes |
@@ -67,4 +71,4 @@ Actualizado: 2026-09-29, después de M4. Implementado significa código ejecutab
 | M11 | Demo pública educativa y hosting | Pendiente | sólo CLI local |
 | Exclusiones | Inversiones, bot financiero, custodia, firma, envío de fondos | Fuera de alcance | sin signer ni métodos RPC mutantes |
 
-Siguiente hito propuesto: **M5 — corpus y retrieval**, pero debe comenzar con su propio change OpenSpec. Tracing y nuevas redes también requieren contratos separados antes de habilitarse.
+Siguiente hito propuesto: **M6 — agentes analistas y orquestación acotada**, pero debe comenzar con su propio change OpenSpec. Tracing y nuevas redes también requieren contratos separados antes de habilitarse.

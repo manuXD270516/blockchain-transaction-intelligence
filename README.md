@@ -2,9 +2,9 @@
 
 Plataforma analítica y educativa para investigar transacciones EVM mediante datos públicos, MCP, agentes y RAG con evidencia verificable.
 
-**Estado: M0–M4 implementados y verificados localmente.** Hay replay offline, adapter Ethereum Sepolia de sólo lectura, normalización canónica, extracción estricta de eventos estándar y servidor MCP stdio con evidencia. M5–M11 siguen pendientes. No firma, custodia, invierte, despliega contratos ni mueve fondos, tampoco en testnet.
+**Estado: M0–M5 implementados y verificados localmente.** Hay replay offline, adapter Ethereum Sepolia de sólo lectura, normalización canónica, extracción estricta de eventos estándar, servidor MCP stdio y retrieval documental versionado. M6–M11 siguen pendientes. No firma, custodia, invierte, despliega contratos ni mueve fondos, tampoco en testnet.
 
-[Listado completo de funcionalidades y status](docs/feature-status.md) · [Validación M0–M4](docs/verification.md)
+[Listado completo de funcionalidades y status](docs/feature-status.md) · [Validación M0–M5](docs/verification.md)
 
 ## Ejecutar
 
@@ -65,7 +65,7 @@ La extracción reconoce únicamente layouts canónicos de `Transfer` ERC-20/ERC-
 
 ## Servidor MCP read-only M4
 
-El servidor local usa stdio y MCP 2026-07-28 mediante el SDK TypeScript v2. Expone exactamente `get_transaction`, `get_receipt`, `get_block`, `get_wallet_balance`, `get_token_transfers`, `get_contract`, `get_contract_events`, `trace_transaction` y `search_protocol_docs`. Las dos últimas responden `unavailable` hasta hitos posteriores; no fabrican trazas ni resultados RAG.
+El servidor local usa stdio y MCP 2026-07-28 mediante el SDK TypeScript v2. Expone exactamente `get_transaction`, `get_receipt`, `get_block`, `get_wallet_balance`, `get_token_transfers`, `get_contract`, `get_contract_events`, `trace_transaction` y `search_protocol_docs`. Tracing continúa respondiendo `unavailable`; la búsqueda documental usa el corpus local M5 y nunca navega la web durante una consulta.
 
 ```powershell
 npm run build
@@ -76,24 +76,40 @@ npm run mcp
 
 Las lecturas on-chain están fijadas a Sepolia (`11155111`) y al endpoint PublicNode incluido en el adapter. No hay HTTP remoto, endpoint configurable, persistencia, firma ni envío. Cada resultado usa un envelope versionado con snapshot, procedencia, cobertura, evidencia y paginación. `get_contract_events.data` contiene elementos `{raw, decoded}` para mantener separados el log observado y su interpretación derivada. Los rangos admiten como máximo 100 bloques inclusivos, las páginas 100 elementos y la respuesta serializada 2 MiB. Los cursores HMAC expiran y se ligan a tool, consulta y manifest de snapshots.
 
+## Protocol RAG M5
+
+El snapshot `corpus/snapshots/m5-v1` contiene 6 documentos y 139 chunks: EIP-20/721/1155, changelogs OpenZeppelin Contracts v4.9.4/v5.0.2 y la auditoría v5.0.0. Fuentes, modelo MiniLM ONNX cuantizado, vocabulario, documentos, chunks y vectores están fijados por SHA-256. BM25 y cosine se fusionan con RRF; cada hit conserva span exacto, versión, compatibilidad e identidad del snapshot.
+
+```powershell
+npm run rag:verify
+npm run rag:eval
+```
+
+`rag:verify` funciona offline y verifica manifest, rutas, tamaños, hashes, dimensiones y spans. `rag:eval` ejecuta qrels versionados; la gate actual obtiene Recall@5 1,00, MRR@10 0,867, abstención 1,00 y compatibilidad de versión correcta. La ingesta administrativa es la única fase con red: `rag:fetch` acepta exclusivamente el lock allowlisted `corpus/sources.json`; búsqueda, MCP, tests y evaluación no descargan documentos ni modelos.
+
+`search_protocol_docs` admite `query`, `protocol`, `version`, `chain_id` y `top_k≤10`. Los scores son ordinales, no probabilidades. Hits incompatibles se etiquetan `conflicting`; una consulta sin soporte devuelve `ok`, lista vacía y `NO_RELEVANT_DOCUMENTS`. El contenido recuperado no puede cambiar permisos ni ejecutar instrucciones, y M5 todavía no crea claims ni decide entailment final.
+
 ## Estructura y límites
 
 - `src/fixtures`: manifest validado, loader y verificación de integridad.
 - `src/adapters`: contratos, fixture adapter, política RPC, transporte HTTPS y Ethereum adapter.
 - `src/normalization`: normalizador puro, cantidades exactas y evidencia de fuentes/derivaciones.
 - `src/events`: decodificador estricto, transferencias event-reported y grafo base.
+- `src/rag`: loader de snapshots, WordPiece/MiniLM WASM y retrieval híbrido; las CLIs administrativas/eval están en `src/rag-*.ts`.
 - `src/mcp`: dispatcher, schemas, envelopes, errores públicos y cursores autenticados; `src/mcp-cli.ts` es el entrypoint stdio.
+- `corpus`: allowlist fijada y snapshot inmutable M5; staging de ingesta no se versiona.
+- `evals`: qrels versionados y gates de retrieval.
 - `.cursor/mcp.json`: configuración local del servidor compilado para clientes Cursor.
 - `fixtures`: cuatro escenarios sintéticos versionados y sus checksums.
 - `test`: oráculos, escenarios RPC sintéticos, pruebas de seguridad/consistencia.
 - `scripts/generate-fixtures.mjs`: utilidad de mantenimiento; regenera los fixtures sintéticos, no se ejecuta durante replay.
-- `.github/workflows/ci.yml`: suite Linux con namespace de red aislado; ejecución remota aún pendiente.
+- `.github/workflows/ci.yml`: suite Linux con namespace de red aislado, ejecutada remotamente en GitHub Actions.
 
 Los hashes detectan cambios respecto al manifest, no prueban autenticidad del proveedor. Datos raw desconocidos no se ejecutan. Configurar el fixture root como sólo lectura en despliegue; el loader no es un sandbox contra procesos locales hostiles que cambien directorios concurrentemente. La procedencia live reside en la respuesta; su persistencia y el modelo completo de claims llegarán después.
 
 ## OpenSpec
 
-Changes de implementación: [M0 bootstrap](openspec/changes/bootstrap-offline-foundation/proposal.md), [M1 adapter](openspec/changes/add-ethereum-readonly-adapter/proposal.md), [M2 normalización](openspec/changes/normalize-transaction-evidence/proposal.md), [M3 eventos](openspec/changes/extract-standard-token-events/proposal.md) y [M4 MCP](openspec/changes/add-readonly-mcp-server/proposal.md).
+Changes de implementación: [M0 bootstrap](openspec/changes/bootstrap-offline-foundation/proposal.md), [M1 adapter](openspec/changes/add-ethereum-readonly-adapter/proposal.md), [M2 normalización](openspec/changes/normalize-transaction-evidence/proposal.md), [M3 eventos](openspec/changes/extract-standard-token-events/proposal.md), [M4 MCP](openspec/changes/add-readonly-mcp-server/proposal.md) y [M5 RAG](openspec/changes/add-versioned-protocol-rag/proposal.md).
 
 Primer change: [define-transaction-intelligence-foundation](openspec/changes/define-transaction-intelligence-foundation/proposal.md).
 

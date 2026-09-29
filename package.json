@@ -20,7 +20,11 @@
     "live:normalize": "node dist/normalize-cli.js live",
     "extract": "node dist/extract-cli.js fixture",
     "live:extract": "node dist/extract-cli.js live",
-    "mcp": "node dist/mcp-cli.js"
+    "mcp": "node dist/mcp-cli.js",
+    "rag:fetch": "npm run build && node dist/rag-admin-cli.js fetch corpus/sources.json corpus/staging",
+    "rag:build": "node dist/rag-admin-cli.js build corpus/sources.json corpus/staging corpus/snapshots/m5-v1",
+    "rag:verify": "node dist/rag-admin-cli.js verify corpus/snapshots/m5-v1",
+    "rag:eval": "npm run build && node dist/rag-eval-cli.js evals/protocol-rag-qrels.json"
   },
   "devDependencies": {
     "@modelcontextprotocol/client": "2.1.0",
@@ -30,6 +34,8 @@
   },
   "dependencies": {
     "@modelcontextprotocol/server": "2.1.0",
+    "onnxruntime-web": "1.14.0",
+    "pdfjs-dist": "6.3.289",
     "zod": "4.6.5"
   }
 }

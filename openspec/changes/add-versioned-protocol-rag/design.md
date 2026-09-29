@@ -22,7 +22,7 @@ Chunking por sección apunta a 400–800 tokens con overlap máximo 100; código
 
 ## Retrieval
 
-El índice combina BM25 con vectores de `sentence-transformers/all-MiniLM-L6-v2` (384 dimensiones, mean pooling normalizado). Modelo ONNX, tokenizer y revisión exacta quedan fijados por hash en el manifest; runtime usa `local_files_only` y no llama APIs de modelos. Un modelo ausente o con hash incorrecto produce `CORPUS_NOT_CONFIGURED`, no descarga implícita.
+El índice combina BM25 con vectores de `sentence-transformers/all-MiniLM-L6-v2` (384 dimensiones, mean pooling normalizado). Modelo ONNX cuantizado, vocabulario WordPiece y revisión exacta quedan fijados por hash en el manifest. El runtime usa `onnxruntime-web` WASM, sin binarios nativos ni scripts de instalación, y nunca llama APIs de modelos. Un modelo ausente o con hash incorrecto produce `CORPUS_NOT_CONFIGURED`, no descarga implícita.
 
 Cada rama recupera candidatos acotados y se fusiona por reciprocal-rank fusion con `k=60`, pesos iguales y desempate por `chunk_id`. `top_k` permanece entre 1 y 10. Filtros de protocolo, versión y chain se aplican antes del ranking final. El score es ordinal, no probabilidad ni confianza factual.
 

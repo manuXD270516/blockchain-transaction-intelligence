@@ -8,6 +8,9 @@ import { normalizeInvestigation } from '../normalization/normalize.js';
 import { extractTokenEvents } from '../events/extract.js';
 import { decodeStandardEvent } from '../events/decode.js';
 import { canonical } from '../normalization/evidence.js';
+import { CorpusError } from '../rag/errors.js';
+import { HybridProtocolSearch } from '../rag/retrieval.js';
+import type { ProtocolSearch } from '../rag/types.js';
 import { CursorCodec, CursorError } from './cursor.js';
 
 export const TOOL_NAMES = ['get_transaction', 'get_receipt', 'get_block', 'get_wallet_balance', 'get_token_transfers',
@@ -51,7 +54,7 @@ function provenance(items: readonly Evidence[], mode: Investigation['mode'] | 't
     fetched_at: observed(items), raw_content_hash: items.length ? sha256(canonical(items.map(v => v.sha256))) : null };
 }
 function envelope(status: 'ok' | 'partial' | 'not_found' | 'unavailable', data: unknown, evidence: readonly Evidence[], snap: Snapshot | null,
-  coverage: { scope: string; complete: boolean; missing?: string[]; truncated?: boolean; snapshot_manifest_hash?: string },
+  coverage: { scope: string; complete: boolean; missing?: string[]; truncated?: boolean; snapshot_manifest_hash?: string; [key: string]: unknown },
   warnings: readonly string[], page: { next_cursor: string | null } | null,
   mode: Investigation['mode'] | 'testnet_live' = 'testnet_live', extraEvidenceIds: readonly string[] = []) {
   return { schema_version: '1.0.0', request_id: randomUUID(), status, data,
@@ -63,7 +66,9 @@ function envelope(status: 'ok' | 'partial' | 'not_found' | 'unavailable', data: 
 export class BlockchainMcpService {
   private readonly cursors: CursorCodec;
   constructor(private readonly backend: McpBackend = new EthereumAdapter(), secret: Uint8Array = randomBytes(32),
-    private readonly requestId = randomUUID) { this.cursors = new CursorCodec(secret); }
+    private readonly requestId = randomUUID, private readonly documents: ProtocolSearch = new HybridProtocolSearch()) {
+    this.cursors = new CursorCodec(secret);
+  }
 
   async call(name: string, raw: unknown): Promise<ToolResult> {
     const id = this.requestId();
@@ -105,7 +110,25 @@ export class BlockchainMcpService {
       if (input.top_k !== undefined && (!Number.isInteger(input.top_k) || (input.top_k as number) < 1 || (input.top_k as number) > 10)) {
         throw new AdapterError('INVALID_INPUT');
       }
-      return envelope('unavailable', null, [], null, { scope: 'protocol-corpus', complete: false, missing: ['corpus'] }, ['CORPUS_NOT_CONFIGURED'], null);
+      try {
+        const result = await this.documents.search({ query: input.query, top_k: (input.top_k as number | undefined) ?? 5,
+          ...(input.chain_id === undefined ? {} : { chain_id: input.chain_id as string }),
+          ...(input.protocol === undefined ? {} : { protocol: input.protocol as string }),
+          ...(input.version === undefined ? {} : { version: input.version as string }) });
+        const empty = result.hits.length === 0;
+        const response = envelope('ok', result.hits, [], null, { scope: 'approved-versioned-protocol-corpus',
+          complete: !empty, missing: empty ? ['relevant_documents'] : [], truncated: result.candidates > result.hits.length,
+          corpus_snapshot_id: result.corpus_snapshot_id, index_version: result.index_version,
+          branches: result.branches, candidates: result.candidates }, empty ? ['NO_RELEVANT_DOCUMENTS'] : [], null,
+          'testnet_live', result.hits.map(hit => hit.chunk_id));
+        response.provenance = { adapter: 'protocol-corpus', version: result.index_version,
+          fetched_at: result.created_at, raw_content_hash: result.manifest_hash };
+        return response;
+      } catch (error) {
+        if (!(error instanceof CorpusError)) throw error;
+        return envelope('unavailable', null, [], null, { scope: 'protocol-corpus', complete: false, missing: ['corpus'] },
+          ['CORPUS_NOT_CONFIGURED'], null);
+      }
     }
     if (!exact(input, allowed(name))) throw new AdapterError('INVALID_INPUT');
     chain(input.chain_id);

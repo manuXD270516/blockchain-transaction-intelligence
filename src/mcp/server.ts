@@ -45,7 +45,7 @@ const descriptions: Record<keyof typeof schemas, string> = {
   get_contract: 'Get bytecode at a verified snapshot; ABI and proxy identity may be unavailable.',
   get_contract_events: 'Get address logs in an inclusive range of at most 100 blocks.',
   trace_transaction: 'Report fixed call-trace availability; tracing is unavailable in M4.',
-  search_protocol_docs: 'Search the approved protocol corpus; corpus is unavailable until M5.',
+  search_protocol_docs: 'Search the approved, versioned local protocol corpus with verifiable spans.',
 };
 
 export function buildMcpServer(service = new BlockchainMcpService()): McpServer {
