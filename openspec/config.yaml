@@ -1,7 +1,7 @@
 schema: spec-driven
 context: |
   Proyecto blockchain-transaction-intelligence. Documentación en español.
-  Estado: M0–M2 implementados; validación local, CI remota pendiente. Siguiente M3.
+  Estado: M0–M4 implementados y verificados local/remotamente. M5 especificado, aún sin código.
   Analítica educativa EVM, fixtures públicos/sintéticos y testnet de solo lectura.
   Sin firma, claves privadas, custodia, trading ni envío de transacciones.
   Toda feature requiere un change previo con contratos y escenarios verificables.
