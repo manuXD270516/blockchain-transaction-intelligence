@@ -1,0 +1,26 @@
+{
+  "schema_version": "1.0.0",
+  "demo_version": "1.0.0",
+  "fixtures": [
+    {
+      "fixture_id": "synthetic-native-success",
+      "title": "Transferencia nativa exitosa",
+      "lesson": "Una transacción que declara un valor en wei y termina con status 0x1. El sistema reporta remitente, destinatario, valor y estado como hechos observados, sin decir quién controla cada dirección ni por qué se envió."
+    },
+    {
+      "fixture_id": "synthetic-reverted",
+      "title": "Transacción revertida",
+      "lesson": "El receipt reporta status 0x0. El valor declarado no se ejecutó: el grafo marca las aristas como reverted y el reporte emite la anomalía receipt_reports_reverted sin atribuir la causa."
+    },
+    {
+      "fixture_id": "synthetic-pending",
+      "title": "Transacción pendiente",
+      "lesson": "Sin receipt no hay estado de ejecución. Todo queda como unknown y el reporte declara la cobertura incompleta en lugar de suponer un resultado."
+    },
+    {
+      "fixture_id": "synthetic-token-events",
+      "title": "Eventos de tokens",
+      "lesson": "Los logs Transfer se decodifican como eventos reportados por el contrato emisor. Un evento no prueba que el contrato cumpla el estándar ni cambia saldos netos; los contratos quedan sin identificar."
+    }
+  ]
+}

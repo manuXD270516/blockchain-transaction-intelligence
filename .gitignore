@@ -12,3 +12,4 @@ coverage/
 corpus/staging*/
 corpus/current/
 .runs/
+dist-demo/
