@@ -9,7 +9,7 @@
 - [x] 2.2 Implementar suites en proceso y sub-evals con métricas y denominadores.
 - [x] 2.3 Implementar gates, release_blocked, comparación pareada y dashboard.
 - [x] 2.4 Añadir CLI `eval` y tests de fixture adulterado, N/A, violación de política y comparación.
-- [ ] 2.5 Refrescar Graphify y actualizar README, status y verificación.
+- [x] 2.5 Refrescar Graphify y actualizar README, status y verificación.
 
 ## Entorno
 

@@ -2,9 +2,9 @@
 
 Plataforma analítica y educativa para investigar transacciones EVM mediante datos públicos, MCP, agentes y RAG con evidencia verificable.
 
-**Estado: M0–M6 implementados y verificados local y remotamente; M7 implementado y verificado localmente.** Hay replay offline, adapter Ethereum Sepolia de sólo lectura, normalización canónica, extracción estricta de eventos estándar, servidor MCP stdio, retrieval documental versionado, orquestación analítica acotada y revisión de evidencia con reporte. M8–M11 siguen pendientes. No firma, custodia, invierte, despliega contratos ni mueve fondos, tampoco en testnet.
+**Estado: M0–M6 implementados y verificados local y remotamente; M7–M11 implementados y verificados localmente (CI remota omitida por decisión del usuario).** Hay replay offline, adapter Ethereum Sepolia de sólo lectura, normalización canónica, extracción estricta de eventos estándar, servidor MCP stdio, retrieval documental versionado, orquestación analítica acotada, revisión de evidencia con reporte, grafo HTML con evidencia, runner de evaluación con gates, telemetría local con retención y un sitio de demo estático preparado pero **no publicado**. No firma, custodia, invierte, despliega contratos ni mueve fondos, tampoco en testnet.
 
-[Listado completo de funcionalidades y status](docs/feature-status.md) · [Validación M0–M7](docs/verification.md)
+[Listado completo de funcionalidades y status](docs/feature-status.md) · [Validación M0–M11](docs/verification.md)
 
 ## Ejecutar
 
@@ -115,6 +115,51 @@ Antes de cualquier modelo, los validadores determinísticos reconstruyen la evid
 
 `accepted` exige Evidence Agent y Reviewer completos, cero defectos, borrador M6 completo y evidencia verificable. Sin provider, `report` devuelve el baseline como hechos validados y el reporte queda `inconclusive`. Las anomalías sólo referencian claims publicados: por ahora, receipt revertido (OBSERVED) y umbral educativo de 20 eventos por receipt (RULE-BASED). Ninguna es una acusación, y el reporte siempre advierte `REVIEW_IS_NOT_A_SECURITY_AUDIT`.
 
+## Grafo con evidencia M8
+
+```powershell
+npm run build
+node dist/graph-cli.js fixture synthetic-token-events > graph.html
+node dist/graph-cli.js fixture synthetic-reverted --json
+```
+
+La vista se construye desde la extracción M3 y el reporte M7. Sólo muestra relaciones observables: valor declarado por la transacción, logs emitidos y transferencias `event_reported`. Sin trazas declara `NO_CALL_TRACE` y no dibuja llamadas internas. Cada arista enlaza con un panel de evidencia (`#edge-<hash>`) y con los claims que la citan. Las aristas se marcan executed, reverted o unknown; más de 200 se truncan con aviso. El HTML es estático: SVG sin scripts, texto escapado y CSP `default-src 'none'`.
+
+## Evaluación consolidada M9
+
+```powershell
+npm run eval
+node dist/eval-cli.js run --repetitions 5 > a.json
+node dist/eval-cli.js compare a.json b.json
+node dist/eval-cli.js dashboard a.json > eval.html
+```
+
+El runner verifica los checksums de los fixtures y compara contra un golden escrito a mano (`evals/golden/fixtures.json`): tuplas de reconstrucción, eventos, orden de logs, anomalías y abstención sobre contratos no identificables, por familia y split. También ejecuta los evals de retrieval, tool policy y revisión como sub-suites. Cada métrica lleva numerador, denominador y estado `measured`, `N/A` o `unavailable`; una métrica N/A deja su gate `not_applicable`, nunca aprobada. Las gates de seguridad bloquean release aunque la calidad sea alta. `compare` sólo compara resultados con la misma `comparable_key` (fixtures, golden, evals y corpus). Tokens de modelo: `unavailable`, porque la suite offline no usa provider. La latencia es local y no es un SLA.
+
+## Telemetría y retención local M10
+
+```powershell
+node dist/trace-cli.js fixture synthetic-reverted
+node dist/trace-cli.js fixture synthetic-reverted --otlp
+node dist/runs-cli.js record synthetic-reverted --profile demo
+node dist/runs-cli.js list
+node dist/runs-cli.js sweep
+```
+
+Con un tracer inyectado, cada run produce un `trace_id` y spans para run, análisis, llamadas de modelo, tools, revisión y llamadas de revisión, con versiones, budgets y códigos de error. No guarda la pregunta en claro (sólo su hash) ni prompts. Sin tracer el reporte es idéntico. La redacción elimina headers Bearer/Basic, claves con nombre sensible, userinfo de URLs, parámetros de query sensibles y claves en rutas de proveedores; no toca hashes ni direcciones. La exportación OTLP-JSON es local, sin collector ni red.
+
+`RunStore` guarda reporte y traza por run en `.runs/` (ignorado por git). Retención: 30 días por defecto y 24 h con `--profile demo`. `sweep` borra expirados y corruptos. Rechaza raíces dentro de `fixtures`, `corpus`, `evals` o `demo` y la raíz del proyecto, así que borrar un run nunca toca datos públicos. Las cuotas por identidad quedan diferidas: la demo es estática y no acepta consultas.
+
+## Demo pública M11 (preparada, no publicada)
+
+```powershell
+npm run demo:site
+```
+
+Genera `dist-demo/` (ignorado por git) desde los fixtures curados en `demo/fixtures.json`: un índice con propósito, límites, privacidad y estado de las gates, una página por fixture con reporte revisado y grafo, y el dashboard de evaluación. No hay JavaScript, formularios, cookies, recursos externos, wallet ni consultas live, y cada página lleva CSP estricta. La build se niega si el runner M9 bloquea release, si un fixture no pasa sus checksums o si la auditoría del HTML encuentra contenido activo, URLs externas o enlaces rotos. Escribe un `manifest.json` con los hashes de cada archivo.
+
+Hosting propuesto: servir `dist-demo/` como sitio estático (por ejemplo GitHub Pages; la CSP va en meta porque Pages no permite cabeceras). **No se ha desplegado nada.** Publicar requiere autorización explícita y, con el repositorio privado, un plan que permita Pages o un host estático alternativo.
+
 ## Estructura y límites
 
 - `src/fixtures`: manifest validado, loader y verificación de integridad.
@@ -125,8 +170,12 @@ Antes de cualquier modelo, los validadores determinísticos reconstruyen la evid
 - `src/agents`: claims, baseline, provider interface y orquestador acotado; `src/analyze-cli.ts` ofrece replay analítico offline.
 - `src/review`: índice de evidencia, validadores, schemas de Evidence Agent/Reviewer, anomalías y reporte revisado; `src/report-cli.ts` y `src/review-eval-cli.ts` son sus CLIs.
 - `src/mcp`: dispatcher, schemas, envelopes, errores públicos y cursores autenticados; `src/mcp-cli.ts` es el entrypoint stdio.
+- `src/graph`: vista de grafo, HTML compartido con CSP y render SVG; `src/graph-cli.ts`.
+- `src/evals`: métricas, runner consolidado, gates, comparación y dashboard; `src/eval-cli.ts`.
+- `src/telemetry` y `src/runs`: tracer, redacción, OTLP-JSON y store local con retención; `src/trace-cli.ts` y `src/runs-cli.ts`.
+- `src/demo` y `demo/fixtures.json`: generador y auditoría del sitio estático; `src/demo-cli.ts`.
 - `corpus`: allowlist fijada y snapshot inmutable M5; staging de ingesta no se versiona.
-- `evals`: qrels, policy de tools y casos de revisión con sus gates.
+- `evals`: qrels, policy de tools, casos de revisión y golden de fixtures con sus gates.
 - `.cursor/mcp.json`: configuración local del servidor compilado para clientes Cursor.
 - `fixtures`: cuatro escenarios sintéticos versionados y sus checksums.
 - `test`: oráculos, escenarios RPC sintéticos, pruebas de seguridad/consistencia.
@@ -137,7 +186,7 @@ Los hashes detectan cambios respecto al manifest, no prueban autenticidad del pr
 
 ## OpenSpec
 
-Changes de implementación: [M0 bootstrap](openspec/changes/bootstrap-offline-foundation/proposal.md), [M1 adapter](openspec/changes/add-ethereum-readonly-adapter/proposal.md), [M2 normalización](openspec/changes/normalize-transaction-evidence/proposal.md), [M3 eventos](openspec/changes/extract-standard-token-events/proposal.md), [M4 MCP](openspec/changes/add-readonly-mcp-server/proposal.md), [M5 RAG](openspec/changes/add-versioned-protocol-rag/proposal.md), [M6 orquestación](openspec/changes/add-bounded-analysis-orchestrator/proposal.md) y [M7 revisión](openspec/changes/add-evidence-review-pipeline/proposal.md).
+Changes de implementación: [M0 bootstrap](openspec/changes/bootstrap-offline-foundation/proposal.md), [M1 adapter](openspec/changes/add-ethereum-readonly-adapter/proposal.md), [M2 normalización](openspec/changes/normalize-transaction-evidence/proposal.md), [M3 eventos](openspec/changes/extract-standard-token-events/proposal.md), [M4 MCP](openspec/changes/add-readonly-mcp-server/proposal.md), [M5 RAG](openspec/changes/add-versioned-protocol-rag/proposal.md), [M6 orquestación](openspec/changes/add-bounded-analysis-orchestrator/proposal.md), [M7 revisión](openspec/changes/add-evidence-review-pipeline/proposal.md), [M8 grafo](openspec/changes/add-evidence-graph-view/proposal.md), [M9 evaluación](openspec/changes/consolidate-evaluation-runner/proposal.md), [M10 observabilidad](openspec/changes/add-local-observability-retention/proposal.md) y [M11 demo](openspec/changes/prepare-public-demo/proposal.md).
 
 Primer change: [define-transaction-intelligence-foundation](openspec/changes/define-transaction-intelligence-foundation/proposal.md).
 

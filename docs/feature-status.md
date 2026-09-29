@@ -1,6 +1,6 @@
 # Funcionalidades y status
 
-Actualizado: 2026-09-29, después de implementar M7. Implementado significa código ejecutable; validado no implica todos los requisitos M0–M11 completos. Las especificaciones de fundación siguen abiertas.
+Actualizado: 2026-09-29, después de implementar M8–M11. La CI Linux remota de M7–M11 se omitió por decisión del usuario; toda la verificación de esos hitos es local. Implementado significa código ejecutable; validado no implica todos los requisitos M0–M11 completos. Las especificaciones de fundación siguen abiertas.
 
 | Hito | Funcionalidad | Estado | Evidencia / límite |
 |---|---|---|---|
@@ -29,7 +29,7 @@ Actualizado: 2026-09-29, después de implementar M7. Implementado significa cód
 | M2 | Fees execution/blob/total | Implementado y validado localmente | BigInt; total desconocido ante datos/semántica insuficientes |
 | M2 | Evidencia content-addressed y transformaciones versionadas | Implementado y validado localmente | DAG autocontenido, hashes y JSON Pointers verificables; deep-frozen |
 | M2 | CLI de normalización fixture/live | Implementado y validado localmente | offline bajo guard; rama live verificada con transporte simulado |
-| M7/M10 | Evidence store persistente multi-investigación y retención | Diferido explícitamente | M2 entrega bundle JSON exportable; sin base de datos |
+| M7/M10 | Evidence store persistente multi-investigación y retención | Parcial: store local de runs (M10) | reporte + traza por run en `.runs/`, retención y borrado; sin base de datos ni servicio multiusuario |
 | M3 | Decodificación de eventos estándar | Implementado y validado localmente | layouts canónicos ERC-20/721/1155; desconocidos, ambiguos y malformados se conservan |
 | M3 | Extracción ERC-20, ERC-721 y ERC-1155 | Implementado y validado localmente | semántica event_reported; lotes atómicos; sin balances netos ni prueba de conformidad |
 | M3 | Evidencia derivada y grafo base | Implementado y validado localmente | hashes, padres, pointers y edges transaction/emitter/transfer |
@@ -67,13 +67,18 @@ Actualizado: 2026-09-29, después de implementar M7. Implementado significa cód
 | M7 | Anomalías sin atribución automática de fraude | Implementado y validado localmente | receipt revertido (OBSERVED) y umbral educativo de 20 eventos (RULE-BASED); sin anomalías de modelo |
 | M7 | Reporte accepted/partial/inconclusive | Implementado y validado localmente | CLI offline; sin provider queda inconclusive con hechos validados; CI remota pendiente |
 | M7 | Eval de citas y unsupported claims | Implementado y validado localmente | 11 casos; status 1,00 y cero en evidencia irresoluble, acusaciones, promociones, accepted no soportado y tools |
-| M8 | Grafo de transacciones y UI con evidencia | Especificado; pendiente | sin frontend |
-| M9 | Evals de reconstrucción, eventos y contratos | Especificado; pendiente | tests M0–M2 no son estos benchmarks |
-| M9 | Evals de tools, citas, retrieval y unsupported claims | Especificado; pendiente | sin agentes/corpus |
-| M9 | Latencia, tokens, cobertura y comparación de experimentos | Parcial | duración/intentos RPC; runner y tokens LLM pendientes |
-| M10 | Trazabilidad, OpenTelemetry, redacción y alertas | Parcial | errores seguros/journal local; instrumentación global pendiente |
-| M10 | Retención, borrado y aislamiento de investigaciones | Especificado; pendiente | no servicio multiusuario |
-| M11 | Demo pública educativa y hosting | Pendiente | sólo CLI local |
+| M8 | Grafo de transacciones con evidencia | Implementado y validado localmente | HTML/SVG estático sin scripts, CSP, anclas por arista, executed/reverted/unknown, truncación a 200 |
+| M8 | Llamadas internas en el grafo | Pendiente | sin trazas: `NO_CALL_TRACE`, no se dibujan |
+| M9 | Evals de reconstrucción, eventos, orden, anomalías y contratos | Implementado y validado localmente | golden manual de 4 casos; F1 1,00; identificación de contratos N/A (0 identificados), abstención 5/5 |
+| M9 | Evals de tools, citas, retrieval y unsupported claims | Implementado y validado localmente | sub-suites M5–M7 bajo el runner; gates de seguridad bloquean release |
+| M9 | Latencia, tokens, cobertura y comparación de experimentos | Implementado y validado localmente | latencia offline sin modelo (no SLA); tokens `unavailable`; `compare` sólo con la misma `comparable_key` |
+| M9 | Latencia con modelo real | No aplicable todavía | sin provider remoto; gate de 30 s queda not_applicable |
+| M10 | Trazas correlacionadas y OTLP-JSON local | Implementado y validado localmente | spans run/analysis/model/tool/review; sin pregunta en claro ni prompts; sin collector |
+| M10 | Redacción de secretos | Implementado y validado localmente | Bearer/Basic, claves sensibles, userinfo, query y rutas de proveedores; hashes y direcciones intactos |
+| M10 | Retención y borrado de runs | Implementado y validado localmente | 30 días local, 24 h demo; raíces protegidas; ids hex |
+| M10 | Alertas y cuotas por identidad | Diferido | sin servicio ni visitantes que limitar; budgets por run siguen activos |
+| M11 | Sitio de demo estático | Implementado y validado localmente | 4 fixtures curados, límites y privacidad visibles, auditoría de HTML, bloqueo por gates |
+| M11 | Hosting y publicación | Preparado; no publicado | requiere autorización del usuario y host compatible con repositorio privado |
 | Exclusiones | Inversiones, bot financiero, custodia, firma, envío de fondos | Fuera de alcance | sin signer ni métodos RPC mutantes |
 
-Pendiente de M7: ejecutar la CI Linux remota (tarea 3.1). Siguiente hito propuesto: **M8 — grafo de transacciones y UI con evidencia**, que debe comenzar con su propio change OpenSpec. Tracing, proveedores remotos y nuevas redes también requieren contratos/configuración explícita antes de habilitarse.
+Pendiente: CI Linux remota de M7–M11 (tareas 3.1, omitidas por decisión del usuario) y publicación de la demo (M11 3.2, requiere autorización). Tracing, proveedores remotos, nuevas redes y cualquier servicio con visitantes requieren contratos y configuración explícitos antes de habilitarse. Ningún change se ha archivado.
