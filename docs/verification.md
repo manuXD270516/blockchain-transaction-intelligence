@@ -14,7 +14,8 @@ Entorno local: Windows, Node 22.23.1, npm 10.9.8, TypeScript 5.9.3, OpenSpec 1.1
 - El guard MCP bloquea APIs HTTP/HTTPS/TCP/TLS, `fetch` y WebSocket sin interferir con stdio. Es un guard de regresión para el proceso confiable, no un sandbox para código hostil.
 - Graphify se regeneró en modo code-only, sin clustering ni APIs de modelos: 214 nodos y 651 aristas.
 - El guard local bloquea imports de red/fetch/WebSocket para CLI offline y tiene prueba negativa propia. No constituye aislamiento de código hostil.
-- Workflow Linux configurado con network namespace sin conectividad; todavía no ejecutado remotamente. El test de symlink de archivo se omite en Windows; el escape mediante junction sí se ejecuta aquí.
+- GitHub Actions `Offline foundation` ejecutado en Linux sobre `76a96b2`: job `verify` aprobado en 37 s. Incluyó instalación reproducible, typecheck, build, tests dentro de un network namespace sin conectividad, symlink de archivo y regeneración de fixtures sin diff. Run: https://github.com/manuXD270516/blockchain-transaction-intelligence/actions/runs/36526037696.
+- El test de symlink de archivo se omite localmente en Windows y se ejecutó en la CI Linux; el escape mediante junction sí se ejecutó localmente.
 - No se ejecutó una lectura live nueva para M4: la verificación MCP usó backends simulados y la llamada stdio a una capacidad diferida que no consulta RPC.
 
 ## Smoke live ejecutado

@@ -11,7 +11,7 @@ Actualizado: 2026-09-29, después de M4. Implementado significa código ejecutab
 | M0 | Fixtures success/reverted/pending | Implementado y validado localmente | escenarios synthetic, no capturas públicas |
 | M0 | CLI replay JSON determinístico | Implementado y validado localmente | repetición byte a byte, independiente del cwd |
 | M0 | Ejecución offline de replay | Implementado y validado con guard local | guard de regresión, no sandbox hostil |
-| M0 | CI Linux con red aislada y symlink de archivo | Configurado, ejecución remota pendiente | test de symlink de archivo omitido en Windows |
+| M0 | CI Linux con red aislada y symlink de archivo | Implementado y validado remotamente | GitHub Actions ejecutó tests en namespace sin red; symlink cubierto en Linux |
 | M1 | Interfaz ChainAdapter y FixtureAdapter | Implementado y validado localmente | investigate común; procedencia synthetic |
 | M1 | Ethereum Sepolia/PublicNode | Implementado y probado live | chain 11155111, smoke de bloque finalized |
 | M1 | Obtención de transaction y receipt | Implementado, probado con RPC simulado | validación de hash/status/snapshot/logs; expuesto por M4 |
@@ -37,7 +37,7 @@ Actualizado: 2026-09-29, después de M4. Implementado significa código ejecutab
 | M3 | Fixture y CLI de extracción offline/live | Implementado y validado localmente | synthetic-token-events; salida determinística y deep-frozen |
 | M3 | Trazas, llamadas internas y revert reason | Pendiente | capability unsupported; causa del revert desconocida |
 | M3 | Identificación histórica de contratos/proxies | Pendiente | getCode no identifica protocolo ni seguridad |
-| M4 | blockchain-mcp-server/stdin-stdout | Implementado y validado localmente | MCP 2026-07-28, 9 tools, manifest `.cursor/mcp.json`; CI remota pendiente |
+| M4 | blockchain-mcp-server/stdin-stdout | Implementado y validado local y remotamente | MCP 2026-07-28, 9 tools, manifest `.cursor/mcp.json`; CI Linux aprobada |
 | M4 | get_transaction | Implementado y validado con RPC simulado | normalización, evidencia, pending/not_found y snapshot explícitos |
 | M4 | get_receipt | Implementado y validado con RPC simulado | receipt ausente→unavailable; nunca infiere revert |
 | M4 | get_block | Implementado y validado con RPC simulado | referencias hash/número/latest/safe/finalized; sin full transactions |

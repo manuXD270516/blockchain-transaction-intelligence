@@ -11,4 +11,4 @@
 - [x] 2.6 Actualizar Graphify, status, README y verificación.
 
 ## Entorno
-- [ ] 3.1 Ejecutar CI Linux remoto antes de archivar.
+- [x] 3.1 Ejecutar CI Linux remoto antes de archivar.
