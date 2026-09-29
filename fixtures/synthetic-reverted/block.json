@@ -1,0 +1,9 @@
+{
+  "hash": "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "parentHash": "0x0000000000000000000000000000000000000000000000000000000000000000",
+  "number": "0x1",
+  "timestamp": "0x1",
+  "transactions": [
+    "0x2222222222222222222222222222222222222222222222222222222222222222"
+  ]
+}

@@ -1,0 +1,51 @@
+{
+  "schema_version": "1.0.0",
+  "fixture_id": "synthetic-native-success",
+  "scenario_id": "synthetic:native-success",
+  "source_kind": "synthetic",
+  "chain_id": "31337",
+  "description": "Synthetic successful native transfer. Not a public transaction.",
+  "captured_at": "2026-09-24T00:00:00.000Z",
+  "source": {
+    "publisher": "blockchain-transaction-intelligence",
+    "uri": null,
+    "license": "CC0-1.0"
+  },
+  "adapter_version": "fixture-loader/1.0.0",
+  "decoder_version": null,
+  "corpus_snapshot": null,
+  "split": "dev",
+  "capabilities": {
+    "receipts": true,
+    "logs": true,
+    "historical_state": false,
+    "safe_finalized": false,
+    "trace": false,
+    "abi_enrichment": false
+  },
+  "snapshot": {
+    "tx_hash": "0x1111111111111111111111111111111111111111111111111111111111111111",
+    "block_hash": "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "block_number": "1"
+  },
+  "artifacts": [
+    {
+      "role": "transaction",
+      "file": "transaction.json",
+      "sha256": "3539e3a36f677bb3fe373d9609a8ff8b6ff093615a2c9f23cb0d7678552501ad",
+      "bytes": 529
+    },
+    {
+      "role": "receipt",
+      "file": "receipt.json",
+      "sha256": "641a60ac86acff9db34af15da5b204a1ee6c27a795759c009e81648c2f4fb839",
+      "bytes": 1045
+    },
+    {
+      "role": "block",
+      "file": "block.json",
+      "sha256": "ef2ecd63266970346970e8518733b926e10c53b61c72d47633174271aee295be",
+      "bytes": 308
+    }
+  ]
+}

@@ -1,0 +1,35 @@
+{
+  "synthetic-native-success": {
+    "execution_status": "success",
+    "acquisition_status": "ok",
+    "value_wei": "1000000000000000000",
+    "nonce": "0",
+    "gas_limit": "21000",
+    "type": "2",
+    "block_number": "1",
+    "execution_fee_wei": "21000000000000",
+    "total_fee_wei": "21000000000000"
+  },
+  "synthetic-reverted": {
+    "execution_status": "reverted",
+    "acquisition_status": "ok",
+    "value_wei": "1000000000000000000",
+    "nonce": "0",
+    "gas_limit": "21000",
+    "type": "2",
+    "block_number": "1",
+    "execution_fee_wei": "21000000000000",
+    "total_fee_wei": "21000000000000"
+  },
+  "synthetic-pending": {
+    "execution_status": "pending",
+    "acquisition_status": "partial",
+    "value_wei": "1000000000000000000",
+    "nonce": "0",
+    "gas_limit": "21000",
+    "type": "2",
+    "block_number": null,
+    "execution_fee_wei": null,
+    "total_fee_wei": null
+  }
+}

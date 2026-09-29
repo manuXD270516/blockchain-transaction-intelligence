@@ -1,0 +1,24 @@
+name: Offline foundation
+on:
+  push:
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - run: npm run typecheck
+      - run: npm run build
+      - name: Test with network namespace isolated
+        run: sudo unshare --net -- "$(command -v node)" --test test/*.test.mjs
+      - name: Verify committed fixture generation is reproducible
+        run: |
+          node scripts/generate-fixtures.mjs
+          git diff --exit-code -- fixtures/

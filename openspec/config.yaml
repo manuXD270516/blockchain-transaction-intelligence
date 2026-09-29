@@ -1,0 +1,17 @@
+schema: spec-driven
+context: |
+  Proyecto blockchain-transaction-intelligence. Documentación en español.
+  Estado: M0–M2 implementados; validación local, CI remota pendiente. Siguiente M3.
+  Analítica educativa EVM, fixtures públicos/sintéticos y testnet de solo lectura.
+  Sin firma, claves privadas, custodia, trading ni envío de transacciones.
+  Toda feature requiere un change previo con contratos y escenarios verificables.
+  Evidencia observada, reglas e inferencias permanecen separadas.
+  Anomalías nunca constituyen automáticamente fraude, scam ni intención maliciosa.
+rules:
+  specs:
+    - Usar SHALL y escenarios WHEN/THEN, incluyendo degradación y casos negativos.
+    - Versionar adapters, evidence, claims, citas y reglas de anomalías.
+  design:
+    - Documentar límites de confianza, datos ausentes y reproducibilidad.
+  tasks:
+    - Enlazar capability y verificación; marcar completado sólo con evidencia ejecutada.

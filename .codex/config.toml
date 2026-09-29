@@ -1,0 +1,19 @@
+[mcp_servers.graphify]
+command = 'D:\projects\repos-ia-exp\blockchain-transaction-intelligence\.tools\graphify\Scripts\python.exe'
+args = ['-m', 'graphify.serve', 'D:\projects\repos-ia-exp\blockchain-transaction-intelligence\graphify-out\graph.json']
+enabled = true
+enabled_tools = ['query_graph', 'get_node', 'get_neighbors', 'shortest_path', 'graph_stats']
+startup_timeout_sec = 30
+tool_timeout_sec = 30
+
+[mcp_servers.graphify.env]
+PYTHONUTF8 = '1'
+PYTHONHASHSEED = '0'
+GRAPHIFY_QUERY_LOG_DISABLE = '1'
+
+[mcp_servers.blockchain_intelligence]
+command = 'C:\nvm4w\nodejs\node.exe'
+args = ['D:\projects\repos-ia-exp\blockchain-transaction-intelligence\dist\mcp-cli.js']
+enabled = true
+startup_timeout_sec = 30
+tool_timeout_sec = 90

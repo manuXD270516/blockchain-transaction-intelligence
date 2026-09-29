@@ -1,0 +1,31 @@
+{
+  "schema_version": "1.0.0",
+  "source_kind": "synthetic",
+  "description": "RPC test doubles only. These hashes do not identify public transactions.",
+  "chain_id_hex": "0xaa36a7",
+  "transaction": {
+    "hash": "0x1111111111111111111111111111111111111111111111111111111111111111",
+    "chainId": "0xaa36a7",
+    "from": "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "to": "0xcccccccccccccccccccccccccccccccccccccccc",
+    "nonce": "0x0",
+    "value": "0xde0b6b3a7640000",
+    "input": "0x",
+    "blockHash": "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "blockNumber": "0x1"
+  },
+  "receipt": {
+    "transactionHash": "0x1111111111111111111111111111111111111111111111111111111111111111",
+    "blockHash": "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "blockNumber": "0x1",
+    "status": "0x1",
+    "logs": []
+  },
+  "block": {
+    "hash": "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "parentHash": "0x0000000000000000000000000000000000000000000000000000000000000000",
+    "number": "0x1",
+    "timestamp": "0x1",
+    "transactions": ["0x1111111111111111111111111111111111111111111111111111111111111111"]
+  }
+}

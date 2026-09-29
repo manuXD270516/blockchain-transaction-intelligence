@@ -1,0 +1,51 @@
+{
+  "schema_version": "1.0.0",
+  "fixture_id": "synthetic-reverted",
+  "scenario_id": "synthetic:reverted",
+  "source_kind": "synthetic",
+  "chain_id": "31337",
+  "description": "Synthetic reverted transaction; reason unavailable. Not a public transaction.",
+  "captured_at": "2026-09-24T00:00:00.000Z",
+  "source": {
+    "publisher": "blockchain-transaction-intelligence",
+    "uri": null,
+    "license": "CC0-1.0"
+  },
+  "adapter_version": "fixture-loader/1.0.0",
+  "decoder_version": null,
+  "corpus_snapshot": null,
+  "split": "dev",
+  "capabilities": {
+    "receipts": true,
+    "logs": true,
+    "historical_state": false,
+    "safe_finalized": false,
+    "trace": false,
+    "abi_enrichment": false
+  },
+  "snapshot": {
+    "tx_hash": "0x2222222222222222222222222222222222222222222222222222222222222222",
+    "block_hash": "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "block_number": "1"
+  },
+  "artifacts": [
+    {
+      "role": "transaction",
+      "file": "transaction.json",
+      "sha256": "78a2ecf02ab15992d37f7d25b76dc92c73de54d22ddca006207b1b5ddeb5edf6",
+      "bytes": 529
+    },
+    {
+      "role": "receipt",
+      "file": "receipt.json",
+      "sha256": "e254d0746933e8856be02b598f8d14bb9b4602cbafa1bb3bf18ef44434267a60",
+      "bytes": 1045
+    },
+    {
+      "role": "block",
+      "file": "block.json",
+      "sha256": "4800a25f1ca3bde64ffd7317b631a5a900f8c3f6f37aca9ba80a23da0b27964a",
+      "bytes": 308
+    }
+  ]
+}

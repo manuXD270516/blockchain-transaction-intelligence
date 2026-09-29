@@ -1,0 +1,43 @@
+# Read-only MCP server
+
+## ADDED Requirements
+
+### Requirement: servidor MCP stdio con contrato cerrado
+El sistema SHALL exponer las nueve tools definidas para M4 mediante stdio, schemas cerrados y annotations read-only, sin métodos de firma, envío o RPC pass-through.
+
+#### Scenario: inventario de tools
+- **WHEN** un cliente inicializa el servidor y solicita `tools/list`
+- **THEN** recibe exactamente las nueve tools, con schemas y annotations de sólo lectura
+
+### Requirement: respuestas con evidencia y cobertura
+Cada resultado SHALL usar un envelope versionado con estado, evidencia, snapshot, procedencia, cobertura, warnings y paginación, y SHALL distinguir ausencia, indisponibilidad y error.
+
+#### Scenario: receipt todavía no disponible
+- **WHEN** una transacción incluida o pendiente no tiene receipt
+- **THEN** `get_receipt` responde unavailable con cobertura incompleta y no afirma revert
+
+#### Scenario: capacidades futuras
+- **WHEN** se invoca tracing o búsqueda documental antes de sus hitos
+- **THEN** la tool responde unavailable con warning explícito y datos null
+
+### Requirement: enforcement independiente de annotations
+El servidor SHALL validar chain, hashes, direcciones, BlockRef, rangos, páginas, cursores, tamaño de respuesta y allowlist en código antes de ejecutar backends.
+
+#### Scenario: intento de ampliar autoridad
+- **WHEN** el input contiene propiedades extra, cadena no soportada, referencia pending o parámetros ejecutables
+- **THEN** se rechaza con INVALID_INPUT o UNSUPPORTED_CHAIN sin ejecutar RPC
+
+### Requirement: paginación ligada a consulta
+Los resultados paginados SHALL mantener orden determinístico y usar cursores autenticados, expirables y ligados a tool, consulta y snapshot.
+
+#### Scenario: cursor reutilizado en otra consulta
+- **WHEN** un cursor válido se presenta con dirección, rango o transacción diferente
+- **THEN** la llamada falla con INVALID_CURSOR y no mezcla resultados
+
+### Requirement: pruebas de protocolo y política
+La suite SHALL probar initialize, tools/list, tools/call, schemas, envelopes, errores, capacidades unavailable, límites, cursor adulterado y ausencia de llamadas mutantes.
+
+#### Scenario: ejecución offline reproducible
+- **WHEN** el cliente de contrato usa un servicio fixture bajo guard de red
+- **THEN** las respuestas son determinísticas salvo request_id controlado y no intentan red
+

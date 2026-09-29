@@ -1,0 +1,16 @@
+{
+  "hash": "0x1111111111111111111111111111111111111111111111111111111111111111",
+  "chainId": "0x7a69",
+  "from": "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+  "to": "0xcccccccccccccccccccccccccccccccccccccccc",
+  "nonce": "0x0",
+  "value": "0xde0b6b3a7640000",
+  "input": "0x",
+  "type": "0x2",
+  "gas": "0x5208",
+  "maxFeePerGas": "0x77359400",
+  "maxPriorityFeePerGas": "0x3b9aca00",
+  "blockHash": "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "blockNumber": "0x1",
+  "transactionIndex": "0x0"
+}

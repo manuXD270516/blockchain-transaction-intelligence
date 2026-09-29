@@ -1,0 +1,35 @@
+{
+  "name": "blockchain-transaction-intelligence",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Read-only educational blockchain investigation — offline foundation",
+  "type": "module",
+  "engines": {
+    "node": ">=22.15.0 <23"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "npm run build && node --test test/*.test.mjs",
+    "check": "npm run typecheck && npm test",
+    "demo": "npm run build && node dist/cli.js replay synthetic-native-success",
+    "replay": "node dist/cli.js replay",
+    "live:smoke": "npm run build && node dist/live-cli.js smoke",
+    "live:investigate": "node dist/live-cli.js investigate",
+    "normalize": "node dist/normalize-cli.js fixture",
+    "live:normalize": "node dist/normalize-cli.js live",
+    "extract": "node dist/extract-cli.js fixture",
+    "live:extract": "node dist/extract-cli.js live",
+    "mcp": "node dist/mcp-cli.js"
+  },
+  "devDependencies": {
+    "@modelcontextprotocol/client": "2.1.0",
+    "@noble/hashes": "1.8.0",
+    "@types/node": "22.20.2",
+    "typescript": "5.9.3"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/server": "2.1.0",
+    "zod": "4.6.5"
+  }
+}

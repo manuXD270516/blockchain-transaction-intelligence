@@ -1,0 +1,51 @@
+{
+  "schema_version": "1.0.0",
+  "fixture_id": "synthetic-token-events",
+  "scenario_id": "synthetic:token-events",
+  "source_kind": "synthetic",
+  "chain_id": "31337",
+  "description": "Synthetic standard token event layouts plus one unknown event. Not a public transaction.",
+  "captured_at": "2026-09-24T00:00:00.000Z",
+  "source": {
+    "publisher": "blockchain-transaction-intelligence",
+    "uri": null,
+    "license": "CC0-1.0"
+  },
+  "adapter_version": "fixture-loader/1.0.0",
+  "decoder_version": null,
+  "corpus_snapshot": null,
+  "split": "dev",
+  "capabilities": {
+    "receipts": true,
+    "logs": true,
+    "historical_state": false,
+    "safe_finalized": false,
+    "trace": false,
+    "abi_enrichment": false
+  },
+  "snapshot": {
+    "tx_hash": "0x4444444444444444444444444444444444444444444444444444444444444444",
+    "block_hash": "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "block_number": "1"
+  },
+  "artifacts": [
+    {
+      "role": "transaction",
+      "file": "transaction.json",
+      "sha256": "191635de9dce3a18a416aa1ed33afad71ea016a100a224905d5d544b4d6c0d5a",
+      "bytes": 529
+    },
+    {
+      "role": "receipt",
+      "file": "receipt.json",
+      "sha256": "4fbba1e1817b21306b8fb004258ea7dffd39fe20cd14b06adf140c77227c411d",
+      "bytes": 5074
+    },
+    {
+      "role": "block",
+      "file": "block.json",
+      "sha256": "a1926f0cd22833552fc7134bdbd336cffe35bab35b0080a01abaed2cb51da8f6",
+      "bytes": 308
+    }
+  ]
+}
