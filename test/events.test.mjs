@@ -49,6 +49,9 @@ test('decodes ERC-1155 single and batch without partial batch expansion', () => 
   assert.deepEqual(batch.arguments.values, ['10', '20']);
   assert.equal(decodeStandardEvent([TOPICS.batch, ...indexed], `0x${word(64)}${word(96)}${word(MAX_BATCH_ITEMS + 1)}${word(0)}`).status, 'limit_exceeded');
   assert.equal(decodeStandardEvent([TOPICS.single, ...indexed], `0x${'00'.repeat(MAX_LOG_BYTES + 1)}`).reason, 'LOG_BYTE_LIMIT');
+  // ids has two items, values declares one: the whole batch fails instead of yielding partial transfers.
+  const mismatched = decodeStandardEvent([TOPICS.batch, ...indexed], `0x${word(64)}${word(160)}${word(2)}${word(1)}${word(2)}${word(1)}${word(10)}${word(20)}`);
+  assert.deepEqual([mismatched.status, mismatched.reason, mismatched.arguments], ['malformed', 'BATCH_ARRAY_LENGTH_MISMATCH', null]);
 });
 
 test('fixture extraction retains every log, expands batches and links evidence', async () => {
