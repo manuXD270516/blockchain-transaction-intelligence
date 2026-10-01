@@ -1,0 +1,19 @@
+{
+  "schema_version": "1.0.0",
+  "fixture_id": "synthetic-reverted",
+  "source_kind": "synthetic",
+  "description": "Synthetic call trace: reverted root without revert reason and a nested call that remains a reverted attempt. Not a public transaction.",
+  "captured_at": "2026-10-01T00:00:00.000Z",
+  "tracer": "callTracer",
+  "chain_id": "31337",
+  "snapshot": {
+    "tx_hash": "0x2222222222222222222222222222222222222222222222222222222222222222",
+    "block_hash": "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "block_number": "1"
+  },
+  "artifact": {
+    "file": "trace.json",
+    "sha256": "5bab43d5bd640f5ade38bc0a0f7e5b2c6175ed8d8770d6da8ab2b6b27b5b9cc8",
+    "bytes": 539
+  }
+}

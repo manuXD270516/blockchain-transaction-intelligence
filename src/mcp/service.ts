@@ -12,6 +12,8 @@ import { CorpusError } from '../rag/errors.js';
 import { HybridProtocolSearch } from '../rag/retrieval.js';
 import type { ProtocolSearch } from '../rag/types.js';
 import { CursorCodec, CursorError } from './cursor.js';
+import { buildCallTrace, MAX_TRACE_DEPTH, MAX_TRACE_FRAMES, TraceError } from '../traces/calltrace.js';
+import type { TraceLimits } from '../traces/calltrace.js';
 
 export const TOOL_NAMES = ['get_transaction', 'get_receipt', 'get_block', 'get_wallet_balance', 'get_token_transfers',
   'get_contract', 'get_contract_events', 'trace_transaction', 'search_protocol_docs'] as const;
@@ -25,6 +27,8 @@ export interface McpBackend {
   getBalance(address: string, ref: BlockRef): Promise<BlockRead<Json>>;
   getCode(address: string, ref: BlockRef): Promise<BlockRead<Json>>;
   getLogs(address: string, ref: BlockRef): Promise<BlockRead<Json>>;
+  /** Optional: raw callTracer output as evidence. The bundled Sepolia adapter does not implement it. */
+  traceTransaction?(hash: string): Promise<Evidence>;
 }
 export type ToolResult = { content: [{ type: 'text'; text: string }]; structuredContent: Record<string, unknown>; isError?: boolean };
 const MAX_RESPONSE = 2 * 1024 * 1024;
@@ -66,7 +70,8 @@ function envelope(status: 'ok' | 'partial' | 'not_found' | 'unavailable', data: 
 export class BlockchainMcpService {
   private readonly cursors: CursorCodec;
   constructor(private readonly backend: McpBackend = new EthereumAdapter(), secret: Uint8Array = randomBytes(32),
-    private readonly requestId = randomUUID, private readonly documents: ProtocolSearch = new HybridProtocolSearch()) {
+    private readonly requestId = randomUUID, private readonly documents: ProtocolSearch = new HybridProtocolSearch(),
+    private readonly traceLimits: TraceLimits = { frames: MAX_TRACE_FRAMES, depth: MAX_TRACE_DEPTH }) {
     this.cursors = new CursorCodec(secret);
   }
 
@@ -134,7 +139,7 @@ export class BlockchainMcpService {
     chain(input.chain_id);
     if (name === 'trace_transaction') {
       hash(input.tx_hash);
-      return envelope('unavailable', null, [], null, { scope: 'call-trace', complete: false, missing: ['trace'] }, ['UNSUPPORTED_CAPABILITY'], null);
+      return this.callTrace(input.tx_hash);
     }
     if (name === 'get_transaction' || name === 'get_receipt' || name === 'get_token_transfers') {
       hash(input.tx_hash);
@@ -186,6 +191,36 @@ export class BlockchainMcpService {
         missing: ['abi', 'source', 'proxy_resolution'] }, ['CONTRACT_IDENTITY_NOT_INFERRED'], null);
     }
     return this.contractEvents(input);
+  }
+
+  private async callTrace(txHash: string): Promise<Record<string, unknown>> {
+    if (this.backend.traceTransaction === undefined) {
+      return envelope('unavailable', null, [], null, { scope: 'call-trace', complete: false, missing: ['trace'] }, ['UNSUPPORTED_CAPABILITY'], null);
+    }
+    const investigation = await this.backend.investigate(txHash);
+    if (investigation.chain_id !== SEPOLIA_CHAIN_ID) throw new AdapterError('INCONSISTENT_SNAPSHOT');
+    if (investigation.status === 'not_found') {
+      return envelope('not_found', null, investigation.evidence, null, { scope: 'call-trace', complete: false, missing: ['transaction'] },
+        investigation.warnings, null, investigation.mode);
+    }
+    const source = await this.backend.traceTransaction(txHash);
+    let trace;
+    try {
+      trace = buildCallTrace(investigation, source, this.traceLimits);
+    } catch (error) {
+      if (!(error instanceof TraceError)) throw error;
+      if (error.code === 'TRACE_REQUIRES_RECEIPT') {
+        return envelope('unavailable', null, investigation.evidence, investigation.snapshot, { scope: 'call-trace', complete: false,
+          missing: ['receipt'] }, [...investigation.warnings, 'TRACE_REQUIRES_RECEIPT'], null, investigation.mode);
+      }
+      throw new AdapterError(error.code === 'INCONSISTENT_TRACE' ? 'INCONSISTENT_SNAPSHOT' : error.code === 'SIZE_LIMIT' ? 'SIZE_LIMIT' : 'PROVIDER_ERROR');
+    }
+    const { coverage } = trace;
+    return envelope(coverage.truncated ? 'partial' : 'ok', { transaction_status: trace.transaction_status,
+      reverted_subcalls: trace.reverted_subcalls, frames: trace.frames }, [...investigation.evidence, source], investigation.snapshot,
+    { scope: 'call-trace', complete: !coverage.truncated, truncated: coverage.truncated, missing: coverage.truncated ? ['frames_beyond_limit'] : [],
+      total_frames: coverage.total_frames, kept_frames: coverage.kept_frames, omitted_frames: coverage.omitted_frames, limits: coverage.limits },
+    [...investigation.warnings, ...trace.warnings], null, investigation.mode, trace.evidence.map(node => node.evidence_id));
   }
 
   private async contractEvents(input: Record<string, unknown>): Promise<Record<string, unknown>> {

@@ -5,10 +5,10 @@
 
 ## Implementación
 
-- [ ] 2.1 Implementar loader de fixtures de traza con checksums y generación determinística.
-- [ ] 2.2 Implementar normalizador de trazas con revert propio/ancestral, delegatecall, límites y evidencia.
-- [ ] 2.3 Integrar trazas opcionales en grafo M8 y `trace_transaction` con backend opcional.
-- [ ] 2.4 Añadir CLI `calltrace`, flag `--with-trace` y tests offline.
+- [x] 2.1 Implementar loader de fixtures de traza con checksums y generación determinística.
+- [x] 2.2 Implementar normalizador de trazas con revert propio/ancestral, delegatecall, límites y evidencia.
+- [x] 2.3 Integrar trazas opcionales en grafo M8 y `trace_transaction` con backend opcional.
+- [x] 2.4 Añadir CLI `calltrace`, flag `--with-trace` y tests offline.
 - [ ] 2.5 Refrescar Graphify y actualizar README, status y verificación.
 
 ## Entorno

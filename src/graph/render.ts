@@ -16,7 +16,7 @@ export function renderGraphBody(view: GraphView): string {
   const lines = view.edges.map(edge => {
     const a = position.get(edge.from); const b = position.get(edge.to);
     if (!a || !b) return '';
-    const dashed = edge.kind === 'transaction_declared' ? '' : ' stroke-dasharray="6 4"';
+    const dashed = edge.kind === 'transaction_declared' ? '' : edge.kind === 'internal_call' ? ' stroke-dasharray="2 3"' : ' stroke-dasharray="6 4"';
     return `<a href="#${edge.anchor}"><line x1="${a.x}" y1="${a.y}" x2="${b.x}" y2="${b.y}" stroke="${COLORS[edge.status]}" stroke-width="2"${dashed}><title>${escapeHtml(`${edge.kind} ${edge.status}: ${edge.label}`)}</title></line></a>`;
   }).join('\n');
   const circles = ordered.map(node => {
@@ -33,7 +33,7 @@ ${edge.evidence.map(item => `<tr><td><code>${escapeHtml(item.evidence_id)}</code
   return `<h2>Grafo de relaciones observadas</h2>
 <p>Estado de ejecución: <strong class="${view.execution_status === 'success' ? 'executed' : view.execution_status === 'reverted' ? 'reverted' : 'unknown'}">${escapeHtml(view.execution_status)}</strong> · reporte: ${view.report ? `${escapeHtml(view.report.status)} (<code>${escapeHtml(view.report.report_id.slice(0, 16))}</code>)` : 'no disponible'} · aristas ${view.truncation.shown}/${view.truncation.total}</p>
 ${view.notices.map(notice => `<p class="notice">${escapeHtml(notice)}</p>`).join('\n')}
-<p>Leyenda: <span class="executed">executed</span>, <span class="reverted">reverted</span>, <span class="unknown">unknown</span>; línea continua = valor declarado por la transacción; discontinua = log o evento reportado.</p>
+<p>Leyenda: <span class="executed">executed</span>, <span class="reverted">reverted</span>, <span class="unknown">unknown</span>; línea continua = valor declarado por la transacción; discontinua = log o evento reportado${view.call_trace_available ? '; punteada = llamada interna reportada por la traza' : ''}.</p>
 <svg width="${WIDTH}" height="${HEIGHT}" viewBox="0 0 ${WIDTH} ${HEIGHT}" role="img" aria-label="grafo">
 ${lines}
 ${circles}

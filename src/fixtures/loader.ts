@@ -9,14 +9,14 @@ export function sha256(bytes: string | Uint8Array): string {
   return createHash('sha256').update(bytes).digest('hex');
 }
 
-function requireContained(parent: string, child: string): void {
+export function requireContained(parent: string, child: string): void {
   const path = relative(parent, child);
   if (!path || path === '..' || path.startsWith(`..${sep}`) || isAbsolute(path)) {
     throw new FixtureError('PATH_DENIED');
   }
 }
 
-async function readBounded(directory: string, name: string, limit: number): Promise<Buffer> {
+export async function readBounded(directory: string, name: string, limit: number): Promise<Buffer> {
   const path = await realpath(resolve(directory, name));
   requireContained(directory, path);
   // Avoid opening devices/FIFOs. The root is administrator-owned, not a concurrent attacker workspace.

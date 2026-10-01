@@ -1,0 +1,19 @@
+{
+  "schema_version": "1.0.0",
+  "fixture_id": "synthetic-token-events",
+  "source_kind": "synthetic",
+  "description": "Synthetic call trace: successful root, DELEGATECALL inheriting value, a caught reverted subcall with a nested attempt, and a STATICCALL. Not a public transaction.",
+  "captured_at": "2026-10-01T00:00:00.000Z",
+  "tracer": "callTracer",
+  "chain_id": "31337",
+  "snapshot": {
+    "tx_hash": "0x4444444444444444444444444444444444444444444444444444444444444444",
+    "block_hash": "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "block_number": "1"
+  },
+  "artifact": {
+    "file": "trace.json",
+    "sha256": "ea52acab919fe5c713e2d35f3f9afe52d58ffd6bd4336197fa3964598a53ed61",
+    "bytes": 1972
+  }
+}

@@ -2,9 +2,11 @@ import type { extractTokenEvents } from '../events/extract.js';
 import { sha256 } from '../fixtures/loader.js';
 import { canonical } from '../normalization/evidence.js';
 import type { ReviewedClaim, ReviewedReport } from '../review/types.js';
+import { TraceError } from '../traces/calltrace.js';
+import type { CallTrace } from '../traces/calltrace.js';
 
 export const MAX_VISUAL_EDGES = 200;
-export type EdgeKind = 'transaction_declared' | 'emits' | 'inconsistent_log_reported' | 'token_transfer_reported';
+export type EdgeKind = 'transaction_declared' | 'internal_call' | 'emits' | 'inconsistent_log_reported' | 'token_transfer_reported';
 export type EdgeStatus = 'executed' | 'reverted' | 'unknown';
 type Extraction = ReturnType<typeof extractTokenEvents>;
 
@@ -28,19 +30,21 @@ export interface GraphView {
   mode: string;
   report: { report_id: string; status: string } | null;
   execution_status: string;
-  call_trace_available: false;
+  call_trace_available: boolean;
+  call_trace?: { trace_id: string; transaction_status: string; reverted_subcalls: string[]; coverage: CallTrace['coverage'] };
   nodes: GraphNodeView[];
   edges: GraphEdgeView[];
   truncation: { limit: number; total: number; shown: number; omitted: number };
   notices: string[];
 }
 
-export function buildGraphView(extracted: Extraction, report: ReviewedReport | null, limit = MAX_VISUAL_EDGES): GraphView {
+export function buildGraphView(extracted: Extraction, report: ReviewedReport | null, limit = MAX_VISUAL_EDGES, trace: CallTrace | null = null): GraphView {
   const normalized = extracted.normalized;
   const chain = normalized.chain_id;
   const status: EdgeStatus = normalized.execution_status === 'success' ? 'executed'
     : normalized.execution_status === 'reverted' ? 'reverted' : 'unknown';
-  const evidence = new Map([...normalized.evidence, ...extracted.derived_evidence].map(node => [node.evidence_id, node]));
+  if (trace !== null && (trace.tx_id !== normalized.transaction?.id || trace.chain_id !== chain)) throw new TraceError('INCONSISTENT_TRACE');
+  const evidence = new Map([...normalized.evidence, ...extracted.derived_evidence, ...(trace?.evidence ?? [])].map(node => [node.evidence_id, node]));
   const claims = new Map<string, ReviewedClaim[]>();
   for (const claim of report ? [...report.conclusions, ...report.validated_facts, ...report.audit.claims] : []) {
     for (const id of claim.evidence_ids) claims.set(id, [...claims.get(id) ?? [], claim]);
@@ -55,6 +59,7 @@ export function buildGraphView(extracted: Extraction, report: ReviewedReport | n
     return id;
   };
   const edges: Omit<GraphEdgeView, 'anchor' | 'evidence' | 'claims'>[] = [];
+  const callOrder = new Map<string, number>();
   const cited = new Map<string, string[]>();
   const edge = (value: Omit<GraphEdgeView, 'anchor' | 'evidence' | 'claims'>, evidenceIds: string[]) => {
     edges.push(value); cited.set(value.id, evidenceIds);
@@ -72,6 +77,27 @@ export function buildGraphView(extracted: Extraction, report: ReviewedReport | n
     }
     edge({ id: `${tx.id}:declared`, kind: 'transaction_declared', from, to, status, order: { log_index: null, batch_index: null },
       label: `value_wei ${fields.value_wei as string} declared` }, [tx.normalization_evidence_id]);
+    for (const frame of trace?.frames ?? []) {
+      if (frame.depth === 0) continue;
+      const delegated = frame.call_type === 'DELEGATECALL' || frame.call_type === 'CALLCODE';
+      const caller = address(frame.caller, delegated ? 'delegatecall-context' : 'call-caller');
+      let target: string;
+      if (frame.target !== null) target = address(frame.target, delegated ? 'delegatecall-code' : 'call-target');
+      else {
+        target = `${chain}:contract-creation:${frame.id}`;
+        nodes.set(target, { id: target, kind: 'contract_creation', label: 'contract creation (address unknown here)', roles: [] });
+      }
+      const path = frame.trace_path.join('.');
+      const value = frame.value_declared_wei ?? 'not reported';
+      const detail = frame.value_semantics === 'not_a_transfer'
+        ? `${delegated ? `code ${frame.code_address ?? '-'} in context ${frame.context_address ?? '-'}; ` : ''}value_wei ${value} is not a transfer`
+        : frame.value_semantics === 'reverted_attempt'
+          ? `attempted value_wei ${value} (reverted ${frame.own_reverted ? `here: ${frame.error_observed ?? 'error'}` : 'under ancestor'})`
+          : `value_wei ${value} (executed frame)`;
+      callOrder.set(`${frame.id}:call`, callOrder.size);
+      edge({ id: `${frame.id}:call`, kind: 'internal_call', from: caller, to: target, status: frame.status,
+        order: { log_index: null, batch_index: null }, label: `${frame.call_type} trace_path ${path}: ${detail}` }, frame.evidence_ids);
+    }
     for (const event of extracted.events) {
       const emitter = address(event.emitter, 'contract-emitter');
       const inconsistent = event.status === 'inconsistent';
@@ -86,7 +112,7 @@ export function buildGraphView(extracted: Extraction, report: ReviewedReport | n
       label: `${transfer.standard_candidate} raw_amount ${transfer.raw_amount}${transfer.token_id === null ? '' : ` token_id ${transfer.token_id}`} (event_reported)` },
     transfer.evidence_ids);
   }
-  const sorted = [...edges].sort(compareEdges);
+  const sorted = [...edges].sort((a, b) => compareEdges(a, b, callOrder));
   const shown = sorted.slice(0, limit).map(value => {
     const ids = cited.get(value.id)!;
     return { ...value, anchor: `edge-${sha256(value.id).slice(0, 16)}`,
@@ -96,25 +122,42 @@ export function buildGraphView(extracted: Extraction, report: ReviewedReport | n
   });
   const referenced = new Set(shown.flatMap(value => [value.from, value.to]));
   if (tx) referenced.add(tx.id);
-  const notices = ['NO_CALL_TRACE: relationships are observed transaction, log and event data; internal calls and causal order are unknown.',
+  const notices = [trace === null
+    ? 'NO_CALL_TRACE: relationships are observed transaction, log and event data; internal calls and causal order are unknown.'
+    : 'CALL_TRACE: internal calls are tracer-reported frames; reverted frames and frames under a reverted ancestor are attempts, not effective movements; DELEGATECALL keeps context and code addresses and its inherited value is not a separate transfer.',
     'EVENT_REPORTED: token transfers are reported by events; they do not prove balances, ownership or token conformance.',
     'DECLARED_VALUE: transaction value is declared by the transaction; it does not prove an effective transfer.'];
   if (status === 'unknown') notices.push('EXECUTION_UNKNOWN: no receipt is available; the view does not assert success or failure.');
-  if (status === 'reverted') notices.push('REVERTED: the receipt reports a revert; the cause is unknown without supported tracing.');
+  if (status === 'reverted') {
+    const reason = trace?.frames[0]?.revert_reason ?? null;
+    notices.push(trace === null ? 'REVERTED: the receipt reports a revert; the cause is unknown without supported tracing.'
+      : reason === null ? 'REVERTED: the receipt reports a revert; the trace reports no revert reason, so the cause is unknown.'
+        : `REVERTED: the receipt reports a revert; tracer-reported reason: ${reason}`);
+  }
+  if (trace !== null && status === 'executed' && trace.reverted_subcalls.length) {
+    notices.push(`SUBCALL_REVERTED: the transaction succeeded while subcalls at trace_path ${trace.reverted_subcalls.join(', ')} reverted and were rolled back.`);
+  }
+  if (trace?.coverage.truncated) {
+    notices.push(`TRACE_TRUNCATED: ${trace.coverage.kept_frames} of ${trace.coverage.total_frames} call frames kept; omitted frames do not prove absence of other calls.`);
+  }
   if (sorted.length > shown.length) notices.push(`TRUNCATED: showing ${shown.length} of ${sorted.length} edges; omitted edges do not prove absence of other interactions.`);
   if (normalized.mode === 'synthetic') notices.push('SYNTHETIC_DATA: fixture data, not a public transaction.');
   const body = { schema_version: '1.0.0' as const, chain_id: chain, mode: normalized.mode,
     report: report ? { report_id: report.report_id, status: report.status } : null,
-    execution_status: normalized.execution_status, call_trace_available: false as const,
+    execution_status: normalized.execution_status, call_trace_available: trace !== null,
+    ...(trace === null ? {} : { call_trace: { trace_id: trace.trace_id, transaction_status: trace.transaction_status,
+      reverted_subcalls: [...trace.reverted_subcalls], coverage: structuredClone(trace.coverage) } }),
     nodes: [...nodes.values()].filter(node => referenced.has(node.id)).sort((a, b) => a.id.localeCompare(b.id))
       .map(node => ({ ...node, roles: [...node.roles].sort() })),
     edges: shown, truncation: { limit, total: sorted.length, shown: shown.length, omitted: sorted.length - shown.length }, notices };
   return { ...body, view_id: sha256(canonical(body)) };
 }
 
-function compareEdges(a: Omit<GraphEdgeView, 'anchor' | 'evidence' | 'claims'>, b: Omit<GraphEdgeView, 'anchor' | 'evidence' | 'claims'>): number {
-  const rank = (value: typeof a) => value.kind === 'transaction_declared' ? 0 : 1;
+function compareEdges(a: Omit<GraphEdgeView, 'anchor' | 'evidence' | 'claims'>, b: Omit<GraphEdgeView, 'anchor' | 'evidence' | 'claims'>,
+  callOrder: ReadonlyMap<string, number>): number {
+  const rank = (value: typeof a) => value.kind === 'transaction_declared' ? 0 : value.kind === 'internal_call' ? 1 : 2;
   if (rank(a) !== rank(b)) return rank(a) - rank(b);
+  if (a.kind === 'internal_call') return callOrder.get(a.id)! - callOrder.get(b.id)!;
   const left = a.order.log_index === null ? -1n : BigInt(a.order.log_index);
   const right = b.order.log_index === null ? -1n : BigInt(b.order.log_index);
   if (left !== right) return left < right ? -1 : 1;

@@ -73,3 +73,38 @@ for (const scenario of scenarios) {
   };
   await writeFile(join(dir, 'manifest.json'), `${JSON.stringify(manifest, null, 2)}\n`);
 }
+
+// Synthetic callTracer traces bound to existing M0 fixtures. The M0 manifest contract is unchanged.
+const value = '0xde0b6b3a7640000';
+const traces = [
+  { id: 'synthetic-token-events', digit: '4',
+    description: 'Synthetic call trace: successful root, DELEGATECALL inheriting value, a caught reverted subcall with a nested attempt, and a STATICCALL. Not a public transaction.',
+    root: { type: 'CALL', from: address('b'), to: address('c'), value, gas: '0x5208', gasUsed: '0x5208', input: '0x', output: '0x', calls: [
+      { type: 'DELEGATECALL', from: address('c'), to: address('5'), value, gas: '0x4e20', gasUsed: '0x2710', input: '0xa9059cbb', output: '0x', calls: [
+        { type: 'CALL', from: address('c'), to: address('d'), value: '0x0', gas: '0x2710', gasUsed: '0x1388', input: '0x23b872dd', output: '0x' },
+        { type: 'CALL', from: address('c'), to: address('6'), value: '0x2386f26fc10000', gas: '0x1388', gasUsed: '0x1388', input: '0x12345678',
+          error: 'execution reverted', calls: [
+            { type: 'CALL', from: address('6'), to: address('7'), value: '0x5', gas: '0x3e8', gasUsed: '0x3e8', input: '0x', output: '0x' },
+          ] },
+        { type: 'STATICCALL', from: address('c'), to: address('e'), gas: '0x3e8', gasUsed: '0x1f4', input: '0x70a08231', output: `0x${word(0)}` },
+      ] },
+    ] } },
+  { id: 'synthetic-reverted', digit: '2',
+    description: 'Synthetic call trace: reverted root without revert reason and a nested call that remains a reverted attempt. Not a public transaction.',
+    root: { type: 'CALL', from: address('b'), to: address('c'), value, gas: '0x5208', gasUsed: '0x5208', input: '0x', error: 'execution reverted', calls: [
+      { type: 'CALL', from: address('c'), to: address('6'), value: '0x1', gas: '0x2710', gasUsed: '0x1388', input: '0x', output: '0x' },
+    ] } },
+];
+for (const trace of traces) {
+  const dir = join(root, 'call-traces', trace.id);
+  await mkdir(dir, { recursive: true });
+  const bytes = Buffer.from(`${JSON.stringify(trace.root, null, 2)}\n`);
+  await writeFile(join(dir, 'trace.json'), bytes);
+  const manifest = {
+    schema_version: '1.0.0', fixture_id: trace.id, source_kind: 'synthetic', description: trace.description,
+    captured_at: '2026-10-01T00:00:00.000Z', tracer: 'callTracer', chain_id: '31337',
+    snapshot: { tx_hash: hash(trace.digit), block_hash: hash('a'), block_number: '1' },
+    artifact: { file: 'trace.json', sha256: createHash('sha256').update(bytes).digest('hex'), bytes: bytes.length },
+  };
+  await writeFile(join(dir, 'manifest.json'), `${JSON.stringify(manifest, null, 2)}\n`);
+}

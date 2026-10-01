@@ -44,7 +44,7 @@ const descriptions: Record<keyof typeof schemas, string> = {
   get_token_transfers: 'Extract standard event-reported token transfers for one transaction.',
   get_contract: 'Get bytecode at a verified snapshot; ABI and proxy identity may be unavailable.',
   get_contract_events: 'Get address logs in an inclusive range of at most 100 blocks.',
-  trace_transaction: 'Report fixed call-trace availability; tracing is unavailable in M4.',
+  trace_transaction: 'Get tracer-reported call frames when the backend supports tracing; the bundled Sepolia adapter does not, so it returns unavailable.',
   search_protocol_docs: 'Search the approved, versioned local protocol corpus with verifiable spans.',
 };
 

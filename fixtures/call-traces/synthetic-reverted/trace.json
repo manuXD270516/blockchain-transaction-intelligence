@@ -1,0 +1,22 @@
+{
+  "type": "CALL",
+  "from": "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+  "to": "0xcccccccccccccccccccccccccccccccccccccccc",
+  "value": "0xde0b6b3a7640000",
+  "gas": "0x5208",
+  "gasUsed": "0x5208",
+  "input": "0x",
+  "error": "execution reverted",
+  "calls": [
+    {
+      "type": "CALL",
+      "from": "0xcccccccccccccccccccccccccccccccccccccccc",
+      "to": "0x6666666666666666666666666666666666666666",
+      "value": "0x1",
+      "gas": "0x2710",
+      "gasUsed": "0x1388",
+      "input": "0x",
+      "output": "0x"
+    }
+  ]
+}
