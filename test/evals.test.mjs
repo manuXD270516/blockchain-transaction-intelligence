@@ -35,6 +35,13 @@ test('clean offline run passes every applicable gate with explicit denominators'
   assert.equal(result.metrics.reconstruction_f1.value, 1);
   assert.equal(result.metrics.event_f1.value, 1);
   assert.equal(result.metrics.contract_abstention.denominator, 5);
+  // Splits and families keep their own denominators; an empty split metric stays N/A instead of passing.
+  assert.deepEqual(Object.keys(result.by_split).sort(), ['dev', 'test']);
+  assert.deepEqual(result.by_split.dev.event_f1, { value: null, numerator: 0, denominator: 0, status: 'N/A' });
+  assert.equal(result.by_split.test.event_f1.denominator, result.metrics.event_f1.denominator);
+  assert.equal(result.by_split.dev.reconstruction_f1.denominator + result.by_split.test.reconstruction_f1.denominator,
+    result.metrics.reconstruction_f1.denominator);
+  assert.deepEqual(Object.keys(result.by_family).sort(), ['native', 'pending', 'revert', 'token-events']);
   assert.equal(result.tokens.status, 'unavailable');
   assert.equal(result.latency.model_configured, false);
   assert.ok(result.gates.every(item => item.status !== 'failed'));
