@@ -1,6 +1,6 @@
 # Funcionalidades y status
 
-Actualizado: 2026-09-29, después de implementar M8–M11. La CI Linux remota de M7–M11 se omitió por decisión del usuario; toda la verificación de esos hitos es local. Implementado significa código ejecutable; validado no implica todos los requisitos M0–M11 completos. Las especificaciones de fundación siguen abiertas.
+Actualizado: 2026-10-01, tras re-verificar M0–M11 e implementar las trazas de llamadas offline. La CI Linux remota de M7–M11 y de las trazas no se ejecutó: GitHub Actions está bloqueado por facturación y el usuario decidió omitirla. Su verificación es local, en Windows y en un contenedor Linux sin red (ver docs/verification.md); no es CI remota. Implementado significa código ejecutable; validado no implica todos los requisitos M0–M11 completos. Las especificaciones de fundación siguen abiertas.
 
 | Hito | Funcionalidad | Estado | Evidencia / límite |
 |---|---|---|---|
@@ -35,8 +35,9 @@ Actualizado: 2026-09-29, después de implementar M8–M11. La CI Linux remota de
 | M3 | Evidencia derivada y grafo base | Implementado y validado localmente | hashes, padres, pointers y edges transaction/emitter/transfer |
 | M3 | Límites defensivos | Implementado y validado localmente | 128 KiB/log, 1024 ítems/lote, 10k logs y transferencias por ejecución |
 | M3 | Fixture y CLI de extracción offline/live | Implementado y validado localmente | synthetic-token-events; salida determinística y deep-frozen |
-| M3 | Trazas, llamadas internas y revert reason | Pendiente | capability unsupported; causa del revert desconocida |
-| M3 | Identificación histórica de contratos/proxies | Pendiente | getCode no identifica protocolo ni seguridad |
+| M3 | Trazas de llamadas, llamadas internas y revert reason | Implementado offline (fixtures) y validado localmente | callTracer sintético con checksums; trace_path, revert propio/ancestral, DELEGATECALL contexto/código sin valor efectivo, límites 1000 frames/profundidad 64; revert reason sólo si el tracer lo reporta |
+| M3 | Tracing live (`debug_traceTransaction`) | Pendiente | fuera de la allowlist RPC; PublicNode no se usa para trazas |
+| M3 | Identificación histórica de contratos/proxies | Pendiente | getCode no identifica protocolo ni seguridad; la traza muestra contexto/código pero no identifica implementación |
 | M4 | blockchain-mcp-server/stdin-stdout | Implementado y validado local y remotamente | MCP 2026-07-28, 9 tools, manifest `.cursor/mcp.json`; CI Linux aprobada |
 | M4 | get_transaction | Implementado y validado con RPC simulado | normalización, evidencia, pending/not_found y snapshot explícitos |
 | M4 | get_receipt | Implementado y validado con RPC simulado | receipt ausente→unavailable; nunca infiere revert |
@@ -45,7 +46,7 @@ Actualizado: 2026-09-29, después de implementar M8–M11. La CI Linux remota de
 | M4 | get_token_transfers | Implementado y validado con RPC simulado | sólo eventos estándar M3, páginas de hasta 100 |
 | M4 | get_contract | Implementado y validado con RPC simulado | bytecode/hash; ABI, source y proxy preservados unknown |
 | M4 | get_contract_events | Implementado y validado con RPC simulado | máximo 100 bloques, `{raw, decoded}`, orden estable y cursor ligado a snapshots |
-| M4 | trace_transaction | Abstención implementada y validada | devuelve unavailable/UNSUPPORTED_CAPABILITY; no RPC debug |
+| M4 | trace_transaction | Abstención live; backend de trazas opcional validado con tests | Sepolia: unavailable/UNSUPPORTED_CAPABILITY sin RPC debug; backend inyectado: ok o partial con truncación explícita |
 | M4/M5 | search_protocol_docs | Implementado y validado localmente | corpus local M5; unavailable/CORPUS_NOT_CONFIGURED si falta o no pasa integridad |
 | M4 | Envelopes, límites y errores públicos | Implementado y validado localmente | 100 elementos/página, 2 MiB, HMAC con expiración, mensajes sin eco de input/proveedor |
 | M5 | Corpus curado y versionado | Implementado y validado local y remotamente | 6 documentos/139 chunks; EIPs CC0, OpenZeppelin MIT, dos majors incompatibles y auditoría con alcance |
@@ -68,7 +69,7 @@ Actualizado: 2026-09-29, después de implementar M8–M11. La CI Linux remota de
 | M7 | Reporte accepted/partial/inconclusive | Implementado y validado localmente | CLI offline; sin provider queda inconclusive con hechos validados; CI remota pendiente |
 | M7 | Eval de citas y unsupported claims | Implementado y validado localmente | 11 casos; status 1,00 y cero en evidencia irresoluble, acusaciones, promociones, accepted no soportado y tools |
 | M8 | Grafo de transacciones con evidencia | Implementado y validado localmente | HTML/SVG estático sin scripts, CSP, anclas por arista, executed/reverted/unknown, truncación a 200 |
-| M8 | Llamadas internas en el grafo | Pendiente | sin trazas: `NO_CALL_TRACE`, no se dibujan |
+| M8 | Llamadas internas en el grafo | Implementado con trazas offline y validado localmente | `--with-trace`: aristas `internal_call` executed/reverted con evidencia por frame; sin traza: `NO_CALL_TRACE` y vista idéntica |
 | M9 | Evals de reconstrucción, eventos, orden, anomalías y contratos | Implementado y validado localmente | golden manual de 4 casos; F1 1,00; identificación de contratos N/A (0 identificados), abstención 5/5 |
 | M9 | Evals de tools, citas, retrieval y unsupported claims | Implementado y validado localmente | sub-suites M5–M7 bajo el runner; gates de seguridad bloquean release |
 | M9 | Latencia, tokens, cobertura y comparación de experimentos | Implementado y validado localmente | latencia offline sin modelo (no SLA); tokens `unavailable`; `compare` sólo con la misma `comparable_key` |
@@ -81,4 +82,4 @@ Actualizado: 2026-09-29, después de implementar M8–M11. La CI Linux remota de
 | M11 | Hosting y publicación | Preparado; no publicado | requiere autorización del usuario y host compatible con repositorio privado |
 | Exclusiones | Inversiones, bot financiero, custodia, firma, envío de fondos | Fuera de alcance | sin signer ni métodos RPC mutantes |
 
-Pendiente: CI Linux remota de M7–M11 (tareas 3.1, omitidas por decisión del usuario) y publicación de la demo (M11 3.2, requiere autorización). Tracing, proveedores remotos, nuevas redes y cualquier servicio con visitantes requieren contratos y configuración explícitos antes de habilitarse. Ningún change se ha archivado.
+Pendiente: CI Linux remota de M7–M11 y de trazas (tareas 3.1, omitidas por el bloqueo de facturación; existe evidencia local en contenedor Linux sin red) y publicación de la demo (M11 3.2, requiere autorización). Las tareas 3.1 de M0–M3 siguen sin marcar aunque la ejecución de GitHub Actions sobre `76a96b2` (que ya contenía M0–M3) está registrada en verification.md; marcarlas requiere decisión del usuario. Tracing, proveedores remotos, nuevas redes y cualquier servicio con visitantes requieren contratos y configuración explícitos antes de habilitarse. Ningún change se ha archivado.

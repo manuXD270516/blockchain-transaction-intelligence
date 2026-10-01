@@ -2,7 +2,7 @@
 
 Plataforma analítica y educativa para investigar transacciones EVM mediante datos públicos, MCP, agentes y RAG con evidencia verificable.
 
-**Estado: M0–M6 implementados y verificados local y remotamente; M7–M11 implementados y verificados localmente (CI remota omitida por decisión del usuario).** Hay replay offline, adapter Ethereum Sepolia de sólo lectura, normalización canónica, extracción estricta de eventos estándar, servidor MCP stdio, retrieval documental versionado, orquestación analítica acotada, revisión de evidencia con reporte, grafo HTML con evidencia, runner de evaluación con gates, telemetría local con retención y un sitio de demo estático preparado pero **no publicado**. No firma, custodia, invierte, despliega contratos ni mueve fondos, tampoco en testnet.
+**Estado: M0–M6 implementados y verificados local y remotamente (GitHub Actions). M7–M11 y las trazas de llamadas offline están implementados y verificados localmente en Windows y en un contenedor Linux sin red; eso es evidencia local, no CI remota: GitHub Actions está bloqueado por facturación de la cuenta.** Hay replay offline, adapter Ethereum Sepolia de sólo lectura, normalización canónica, extracción estricta de eventos estándar, trazas de llamadas sintéticas, servidor MCP stdio, retrieval documental versionado, orquestación analítica acotada, revisión de evidencia con reporte, grafo HTML con evidencia, runner de evaluación con gates, telemetría local con retención y un sitio de demo estático preparado pero **no publicado**. No firma, custodia, invierte, despliega contratos ni mueve fondos, tampoco en testnet.
 
 [Listado completo de funcionalidades y status](docs/feature-status.md) · [Validación M0–M11](docs/verification.md)
 
@@ -25,6 +25,27 @@ node dist/cli.js replay synthetic-pending
 ```
 
 Cada resumen incluye estado, cobertura, hashes de integridad y advertencia synthetic; todavía no es un reporte revisado por agentes. `coverage.complete` de M0 cubre sólo transaction/receipt/block, no toda la ejecución EVM.
+
+## Verificación reproducible (offline)
+
+Ninguno de estos comandos necesita credenciales, claves de API, proveedor de modelos ni RPC. Sólo `npm ci` usa red.
+
+```powershell
+npm ci --ignore-scripts --no-audit --no-fund
+npm run check          # typecheck estricto, build y 184 tests
+npm run rag:verify; npm run rag:eval; npm run agent:eval; npm run review:eval
+npm run eval           # runner consolidado con gates de release
+npm run demo:site      # genera dist-demo/; no publica nada
+openspec validate --all --strict --no-interactive
+./scripts/local-linux-ci.ps1   # opcional, requiere Docker
+```
+
+`scripts/local-linux-ci.ps1` ejecuta los pasos de la CI en un contenedor `node:22.23.1-bookworm`:
+
+1. Clona el HEAD confirmado e instala dependencias, la única fase con red.
+2. Ejecuta tests, regeneración de fixtures y todos los evals con `--network none`.
+
+Resultados y fecha en [docs/verification.md](docs/verification.md).
 
 ## Sepolia live (explícito)
 
@@ -61,11 +82,29 @@ npm run extract -- synthetic-token-events
 node dist/extract-cli.js fixture synthetic-token-events
 ```
 
-La extracción reconoce únicamente layouts canónicos de `Transfer` ERC-20/ERC-721 y `TransferSingle`/`TransferBatch` ERC-1155. Conserva eventos desconocidos o malformados, expande lotes de forma atómica, etiqueta cada movimiento como `event_reported` y enlaza eventos, transferencias y grafo base con evidencia content-addressed. No calcula balances netos ni afirma que el contrato cumpla el estándar. ABI arbitrario, proxies, metadatos y trazas siguen pendientes. [Contrato M3](openspec/changes/extract-standard-token-events/design.md).
+La extracción reconoce únicamente layouts canónicos de `Transfer` ERC-20/ERC-721 y `TransferSingle`/`TransferBatch` ERC-1155. Conserva eventos desconocidos o malformados, expande lotes de forma atómica, etiqueta cada movimiento como `event_reported` y enlaza eventos, transferencias y grafo base con evidencia content-addressed. No calcula balances netos ni afirma que el contrato cumpla el estándar. ABI arbitrario, resolución de proxies y metadatos siguen pendientes; las trazas offline se describen abajo. [Contrato M3](openspec/changes/extract-standard-token-events/design.md).
+
+## Trazas de llamadas offline
+
+```powershell
+npm run build
+npm run calltrace -- synthetic-token-events
+node dist/graph-cli.js fixture synthetic-token-events --with-trace > graph.html
+```
+
+Normaliza trazas `callTracer` sintéticas de `fixtures/call-traces/`, verificadas por checksum. Cada frame lleva `trace_path`, tipo de llamada, direcciones de contexto y de código, revert propio y ancestral, y evidencia content-addressed.
+
+- Una subllamada revertida dentro de una transacción exitosa queda `reverted` sin marcar la transacción como fallida (`SUBCALL_REVERTED_TRANSACTION_SUCCEEDED`).
+- Los frames bajo un ancestro revertido son `reverted_attempt` sin valor efectivo.
+- El valor que hereda un `DELEGATECALL` no es una transferencia.
+- Si la raíz revierte sin `revertReason`, la causa queda desconocida.
+- Límites: 1000 frames y profundidad 64; al superarlos, la cobertura queda `partial`.
+
+No hay tracing live: la allowlist RPC no incluye `debug_*`. Con el adapter Sepolia, `trace_transaction` sigue `unavailable`; sólo devuelve frames con un backend de trazas inyectado, como en los tests. El reporte revisado M7 todavía no consume trazas: la diferencia entre receipt exitoso y subllamada revertida se ve en la salida de traza y en el grafo. [Contrato](openspec/changes/add-offline-call-traces/design.md).
 
 ## Servidor MCP read-only M4
 
-El servidor local usa stdio y MCP 2026-07-28 mediante el SDK TypeScript v2. Expone exactamente `get_transaction`, `get_receipt`, `get_block`, `get_wallet_balance`, `get_token_transfers`, `get_contract`, `get_contract_events`, `trace_transaction` y `search_protocol_docs`. Tracing continúa respondiendo `unavailable`; la búsqueda documental usa el corpus local M5 y nunca navega la web durante una consulta.
+El servidor local usa stdio y MCP 2026-07-28 mediante el SDK TypeScript v2. Expone exactamente `get_transaction`, `get_receipt`, `get_block`, `get_wallet_balance`, `get_token_transfers`, `get_contract`, `get_contract_events`, `trace_transaction` y `search_protocol_docs`. Con el adapter Sepolia, `trace_transaction` responde `unavailable` porque no hay tracing live; con un backend de trazas inyectado devuelve frames (ver Trazas de llamadas offline). La búsqueda documental usa el corpus local M5 y nunca navega la web durante una consulta.
 
 ```powershell
 npm run build
@@ -123,7 +162,7 @@ node dist/graph-cli.js fixture synthetic-token-events > graph.html
 node dist/graph-cli.js fixture synthetic-reverted --json
 ```
 
-La vista se construye desde la extracción M3 y el reporte M7. Sólo muestra relaciones observables: valor declarado por la transacción, logs emitidos y transferencias `event_reported`. Sin trazas declara `NO_CALL_TRACE` y no dibuja llamadas internas. Cada arista enlaza con un panel de evidencia (`#edge-<hash>`) y con los claims que la citan. Las aristas se marcan executed, reverted o unknown; más de 200 se truncan con aviso. El HTML es estático: SVG sin scripts, texto escapado y CSP `default-src 'none'`.
+La vista se construye desde la extracción M3 y el reporte M7. Sólo muestra relaciones observables: valor declarado por la transacción, logs emitidos y transferencias `event_reported`. Sin trazas declara `NO_CALL_TRACE` y no dibuja llamadas internas; con `--with-trace` añade aristas `internal_call` desde la traza sintética del fixture. Cada arista enlaza con un panel de evidencia (`#edge-<hash>`) y con los claims que la citan. Las aristas se marcan executed, reverted o unknown; más de 200 se truncan con aviso. El HTML es estático: SVG sin scripts, texto escapado y CSP `default-src 'none'`.
 
 ## Evaluación consolidada M9
 
@@ -166,6 +205,7 @@ Hosting propuesto: servir `dist-demo/` como sitio estático (por ejemplo GitHub 
 - `src/adapters`: contratos, fixture adapter, política RPC, transporte HTTPS y Ethereum adapter.
 - `src/normalization`: normalizador puro, cantidades exactas y evidencia de fuentes/derivaciones.
 - `src/events`: decodificador estricto, transferencias event-reported y grafo base.
+- `src/traces`: loader de fixtures de traza y normalizador `call-trace/1.0.0`; `src/calltrace-cli.ts`.
 - `src/rag`: loader de snapshots, WordPiece/MiniLM WASM y retrieval híbrido; las CLIs administrativas/eval están en `src/rag-*.ts`.
 - `src/agents`: claims, baseline, provider interface y orquestador acotado; `src/analyze-cli.ts` ofrece replay analítico offline.
 - `src/review`: índice de evidencia, validadores, schemas de Evidence Agent/Reviewer, anomalías y reporte revisado; `src/report-cli.ts` y `src/review-eval-cli.ts` son sus CLIs.
@@ -177,16 +217,16 @@ Hosting propuesto: servir `dist-demo/` como sitio estático (por ejemplo GitHub 
 - `corpus`: allowlist fijada y snapshot inmutable M5; staging de ingesta no se versiona.
 - `evals`: qrels, policy de tools, casos de revisión y golden de fixtures con sus gates.
 - `.cursor/mcp.json`: configuración local del servidor compilado para clientes Cursor.
-- `fixtures`: cuatro escenarios sintéticos versionados y sus checksums.
+- `fixtures`: cuatro escenarios sintéticos versionados y sus checksums; `fixtures/call-traces` añade dos trazas sintéticas ligadas a ellos.
 - `test`: oráculos, escenarios RPC sintéticos, pruebas de seguridad/consistencia.
 - `scripts/generate-fixtures.mjs`: utilidad de mantenimiento; regenera los fixtures sintéticos, no se ejecuta durante replay.
-- `.github/workflows/ci.yml`: suite Linux con namespace de red aislado, ejecutada remotamente en GitHub Actions.
+- `.github/workflows/ci.yml`: suite Linux con namespace de red aislado. Se ejecutó en GitHub Actions hasta M6; desde M7 no corre por el bloqueo de facturación. `scripts/local-linux-ci.ps1` reproduce sus pasos en Docker local sin red como evidencia local, no como CI.
 
 Los hashes detectan cambios respecto al manifest, no prueban autenticidad del proveedor. Datos raw desconocidos no se ejecutan. Configurar el fixture root como sólo lectura en despliegue; el loader no es un sandbox contra procesos locales hostiles que cambien directorios concurrentemente. La procedencia live reside en la respuesta; su persistencia y el modelo completo de claims llegarán después.
 
 ## OpenSpec
 
-Changes de implementación: [M0 bootstrap](openspec/changes/bootstrap-offline-foundation/proposal.md), [M1 adapter](openspec/changes/add-ethereum-readonly-adapter/proposal.md), [M2 normalización](openspec/changes/normalize-transaction-evidence/proposal.md), [M3 eventos](openspec/changes/extract-standard-token-events/proposal.md), [M4 MCP](openspec/changes/add-readonly-mcp-server/proposal.md), [M5 RAG](openspec/changes/add-versioned-protocol-rag/proposal.md), [M6 orquestación](openspec/changes/add-bounded-analysis-orchestrator/proposal.md), [M7 revisión](openspec/changes/add-evidence-review-pipeline/proposal.md), [M8 grafo](openspec/changes/add-evidence-graph-view/proposal.md), [M9 evaluación](openspec/changes/consolidate-evaluation-runner/proposal.md), [M10 observabilidad](openspec/changes/add-local-observability-retention/proposal.md) y [M11 demo](openspec/changes/prepare-public-demo/proposal.md).
+Changes de implementación: [M0 bootstrap](openspec/changes/bootstrap-offline-foundation/proposal.md), [M1 adapter](openspec/changes/add-ethereum-readonly-adapter/proposal.md), [M2 normalización](openspec/changes/normalize-transaction-evidence/proposal.md), [M3 eventos](openspec/changes/extract-standard-token-events/proposal.md), [M4 MCP](openspec/changes/add-readonly-mcp-server/proposal.md), [M5 RAG](openspec/changes/add-versioned-protocol-rag/proposal.md), [M6 orquestación](openspec/changes/add-bounded-analysis-orchestrator/proposal.md), [M7 revisión](openspec/changes/add-evidence-review-pipeline/proposal.md), [M8 grafo](openspec/changes/add-evidence-graph-view/proposal.md), [M9 evaluación](openspec/changes/consolidate-evaluation-runner/proposal.md), [M10 observabilidad](openspec/changes/add-local-observability-retention/proposal.md), [M11 demo](openspec/changes/prepare-public-demo/proposal.md) y [trazas de llamadas offline](openspec/changes/add-offline-call-traces/proposal.md).
 
 Primer change: [define-transaction-intelligence-foundation](openspec/changes/define-transaction-intelligence-foundation/proposal.md).
 
@@ -199,4 +239,4 @@ Primer change: [define-transaction-intelligence-foundation](openspec/changes/def
 - [Roadmap](openspec/changes/define-transaction-intelligence-foundation/roadmap.md)
 - [Tareas futuras](openspec/changes/define-transaction-intelligence-foundation/tasks.md)
 
-El diseño fija contratos objetivo M0–M11; no afirma que estén implementados. Cada hito requiere un change de implementación con deltas y criterios de aceptación antes de escribir código. Este change permanece abierto; no archivar como completado mientras sus requisitos carezcan de verificación.
+El diseño fija contratos objetivo M0–M11. Cada hito tuvo su propio change de implementación con criterios de aceptación antes de escribir código. Las tareas 2.1–2.12 están marcadas con la evidencia que las verifica.`n`nEl change sigue abierto, igual que el resto: ninguno se archiva mientras su CI Linux remota no esté registrada. Siguen diferidos el tracing live, la identificación de proxies/ABI, las cuotas por identidad y la publicación de la demo.

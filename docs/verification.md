@@ -1,5 +1,55 @@
 # Verificación M0–M11
 
+## Re-verificación del 2026-10-01 (local)
+
+Entorno: Windows, Node 22.23.1, npm 10.9.8 y OpenSpec 1.11.0. Sin credenciales, proveedor de modelos, RPC ni red, salvo para `npm ci` y la descarga de la imagen Docker.
+
+### Windows
+
+- `npm run check` sobre el código previo, `4e5b367`: 173 tests, 172 aprobados, 0 fallidos y 1 omitido (symlink de archivo en Windows).
+- `npm run check` sobre el código final, `3f2b669`: 184 tests, 183 aprobados, 0 fallidos y 1 omitido (el mismo symlink).
+- `openspec validate --all --strict --no-interactive`: 15 changes válidos, 0 errores.
+- `npm run rag:verify`: snapshot `d9fcac75…`, 6 documentos y 139 chunks.
+- `npm run rag:eval`: Recall@5 1,00, MRR@10 0,8667, abstención 1,00 y versión segura (7 qrels).
+- `npm run agent:eval`: tool selection 1,00 y 0 ejecuciones prohibidas (5 casos).
+- `npm run review:eval`: status_accuracy 1,00 y 0 en todas las métricas de seguridad (11 casos).
+- `node dist/eval-cli.js run`: release no bloqueado; 22 gates aprobadas y 2 not_applicable (identificación de contratos sin casos y latencia con modelo). El `result_id` del demo, `487b16ce…`, no cambió tras añadir trazas.
+- `npm run demo:site`: 6 archivos, `published: false`.
+- Regenerar fixtures, incluidas las trazas, no produjo diff.
+
+### Contenedor Linux
+
+`scripts/local-linux-ci.ps1` usa `node:22.23.1-bookworm` en Docker 29.8.1 sobre WSL2, kernel 6.6.87.2. Es evidencia local: no sustituye ni registra la CI remota de GitHub Actions, bloqueada por facturación.
+
+1. Clona el commit confirmado y ejecuta `npm ci --ignore-scripts`, typecheck y build.
+2. Con `--network none`, verifica el aislamiento: sólo la interfaz `lo` y `fetch` falla con `EAI_AGAIN`.
+
+Ejecuciones:
+
+- Sobre `4e5b367`: 173 tests, 173 aprobados, 0 omitidos (incluye el symlink de archivo).
+- Sobre `314dbe2`: 184 tests, 184 aprobados, 0 fallidos y 0 omitidos.
+- Sobre `3f2b669`, el código final, con el script versionado: 184 tests, 184 aprobados, 0 fallidos y 0 omitidos.
+
+En todas, la regeneración de fixtures quedó sin diff y todos los evals pasaron con los mismos valores que en Windows. `demo-cli build` terminó con `published: false`.
+
+### Implementado en esta re-verificación
+
+- Change `add-offline-call-traces`, con 11 tests nuevos:
+  - Subllamada revertida en una transacción exitosa, frames bajo ancestro revertido y DELEGATECALL con contexto/código sin valor efectivo.
+  - Raíz revertida sin razón, que deja la causa desconocida, y razón reportada por el tracer.
+  - Truncación por frames y por profundidad, y raíz incoherente con transacción o receipt.
+  - Schema desconocido, checksum adulterado y tamaño excesivo.
+  - Grafo con aristas `internal_call`; sin traza, la vista es idéntica.
+  - Texto de error hostil escapado.
+  - `trace_transaction` `ok`/`partial`/`INCONSISTENT_SNAPSHOT` con un backend de trazas inyectado.
+  - CLIs bajo guard offline.
+- Aserción nueva, en el test ERC-1155 existente, para arrays de longitudes distintas: `BATCH_ARRAY_LENGTH_MISMATCH`, sin transferencias parciales.
+- Aserción nueva de denominadores por split (dev/test) y familia en el runner M9, con N/A explícito en el split sin casos.
+- Graphify regenerado en modo code-only: 636 nodos y 1.938 aristas.
+- No hubo llamadas a modelos, blockchain live, RPC ni APIs de pago.
+
+## Verificación del 2026-09-29
+
 Entorno local: Windows, Node 22.23.1, npm 10.9.8, TypeScript 5.9.3, OpenSpec 1.11.0. Fecha: 2026-09-29.
 
 - `npm run check`: typecheck estricto y build correctos; 173 tests, 172 aprobados, 0 fallidos y 1 omitido en Windows (symlink de archivo).

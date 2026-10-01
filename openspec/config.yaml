@@ -1,7 +1,7 @@
 schema: spec-driven
 context: |
   Proyecto blockchain-transaction-intelligence. Documentación en español.
-  Estado: M0–M6 implementados y verificados local/remotamente. M7–M11 implementados y verificados localmente; CI remota omitida por decisión del usuario. Demo M11 preparada, no publicada.
+  Estado: M0–M6 implementados y verificados local/remotamente. M7–M11 y trazas de llamadas offline implementados y verificados localmente (Windows y contenedor Linux sin red); CI remota no ejecutada por bloqueo de facturación de GitHub Actions. Demo M11 preparada, no publicada.
   Analítica educativa EVM, fixtures públicos/sintéticos y testnet de solo lectura.
   Sin firma, claves privadas, custodia, trading ni envío de transacciones.
   Toda feature requiere un change previo con contratos y escenarios verificables.
