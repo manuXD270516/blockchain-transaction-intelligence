@@ -26,6 +26,7 @@
     "review:eval": "npm run build && node dist/review-eval-cli.js evals/review-cases.json",
     "graph": "node dist/graph-cli.js fixture",
     "calltrace": "node dist/calltrace-cli.js fixture",
+    "contract": "node dist/contract-cli.js fixture",
     "eval": "npm run build && node dist/eval-cli.js run",
     "trace": "node dist/trace-cli.js fixture",
     "runs": "node dist/runs-cli.js",

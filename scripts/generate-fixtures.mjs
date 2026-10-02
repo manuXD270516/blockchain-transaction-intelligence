@@ -108,3 +108,43 @@ for (const trace of traces) {
   };
   await writeFile(join(dir, 'manifest.json'), `${JSON.stringify(manifest, null, 2)}\n`);
 }
+
+// Synthetic contract-identification fixtures: EIP-1967 proxy known, proxy upgraded without historical ABI, plain contract.
+const canonicalJson = value => Array.isArray(value) ? `[${value.map(canonicalJson).join(',')}]`
+  : value !== null && typeof value === 'object'
+    ? `{${Object.keys(value).sort().map(key => `${JSON.stringify(key)}:${canonicalJson(value[key])}`).join(',')}}` : JSON.stringify(value);
+const sha = text => createHash('sha256').update(text).digest('hex');
+const contractsDir = join(root, 'contracts');
+await mkdir(contractsDir, { recursive: true });
+const proxyCode = '0x363d3d373d3d3d363d7f360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc545af43d82803e903d91603857fd5bf3';
+const implV1 = '0x6080604052348015600f57600080fd5b50600436106028576000356001';
+const implV2 = '0x6080604052348015600f57600080fd5b50600436106028576000356002';
+const plainCode = '0x60806040526000805560ff';
+const transferAbi = [{ type: 'event', name: 'Transfer', anonymous: false, inputs: [
+  { name: 'from', type: 'address', indexed: true }, { name: 'to', type: 'address', indexed: true }, { name: 'value', type: 'uint256', indexed: false }] }];
+const registry = { schema_version: '1.0.0', entries: [{ code_sha256: sha(implV1), name: 'SyntheticToken', version: '1.0.0',
+  abi: transferAbi, abi_sha256: sha(canonicalJson(transferAbi)),
+  provenance: { source_kind: 'synthetic', publisher: 'blockchain-transaction-intelligence', license: 'CC0-1.0',
+    note: 'Synthetic ABI registered by code hash for offline identification tests; not a deployed contract.' } }] };
+const registryBytes = Buffer.from(`${JSON.stringify(registry, null, 2)}\n`);
+await writeFile(join(contractsDir, 'abi-registry.json'), registryBytes);
+const slotOf = impl => `0x${'0'.repeat(24)}${impl.slice(2)}`;
+const contracts = [
+  { id: 'synthetic-proxy-known', block: 'b', number: '10', description: 'Synthetic EIP-1967 proxy whose implementation code hash is registered.',
+    state: { code: proxyCode, implementation_slot: slotOf(address('7')), implementation_code: implV1 } },
+  { id: 'synthetic-proxy-upgraded', block: 'c', number: '20', description: 'Same synthetic proxy after an upgrade; the new implementation has no registered (historical) ABI.',
+    state: { code: proxyCode, implementation_slot: slotOf(address('8')), implementation_code: implV2 } },
+  { id: 'synthetic-plain-contract', block: 'd', number: '30', description: 'Synthetic non-proxy contract whose code hash is not registered.',
+    state: { code: plainCode, implementation_slot: `0x${'0'.repeat(64)}`, implementation_code: null } },
+];
+for (const contract of contracts) {
+  const dir = join(contractsDir, contract.id);
+  await mkdir(dir, { recursive: true });
+  const bytes = Buffer.from(`${JSON.stringify(contract.state, null, 2)}\n`);
+  await writeFile(join(dir, 'state.json'), bytes);
+  const manifest = { schema_version: '1.0.0', fixture_id: contract.id, source_kind: 'synthetic', description: `${contract.description} Not a public contract.`,
+    chain_id: '31337', address: address(contract.id === 'synthetic-plain-contract' ? '9' : '6'), block_hash: hash(contract.block), block_number: contract.number,
+    registry_sha256: sha(registryBytes),
+    artifact: { file: 'state.json', sha256: sha(bytes), bytes: bytes.length } };
+  await writeFile(join(dir, 'manifest.json'), `${JSON.stringify(manifest, null, 2)}\n`);
+}

@@ -1,0 +1,41 @@
+{
+  "schema_version": "1.0.0",
+  "entries": [
+    {
+      "code_sha256": "a4da589e0101d7a8aaeb0c3f0e2f871232289aa8120f6a605ccf55e599757ade",
+      "name": "SyntheticToken",
+      "version": "1.0.0",
+      "abi": [
+        {
+          "type": "event",
+          "name": "Transfer",
+          "anonymous": false,
+          "inputs": [
+            {
+              "name": "from",
+              "type": "address",
+              "indexed": true
+            },
+            {
+              "name": "to",
+              "type": "address",
+              "indexed": true
+            },
+            {
+              "name": "value",
+              "type": "uint256",
+              "indexed": false
+            }
+          ]
+        }
+      ],
+      "abi_sha256": "113299f6c6a92ca29866a7bce830c0c9dcb061c53a6d1248adf369bd75274a2d",
+      "provenance": {
+        "source_kind": "synthetic",
+        "publisher": "blockchain-transaction-intelligence",
+        "license": "CC0-1.0",
+        "note": "Synthetic ABI registered by code hash for offline identification tests; not a deployed contract."
+      }
+    }
+  ]
+}

@@ -3,7 +3,7 @@ import { sha256 } from '../fixtures/loader.js';
 import { canonical } from '../normalization/evidence.js';
 import type { Anomaly, ReviewedClaim } from './types.js';
 
-export interface AnomalyContext { receipt_evidence_id: string | null; receipt_status: string | null }
+export interface AnomalyContext { receipt_evidence_id: string | null; receipt_status: string | null; trace_subcall_claim_ids?: readonly string[] }
 
 export function deriveAnomalies(published: readonly ReviewedClaim[], context: AnomalyContext): Anomaly[] {
   const anomalies: Anomaly[] = [];
@@ -14,6 +14,11 @@ export function deriveAnomalies(published: readonly ReviewedClaim[], context: An
       anomalies.push(anomaly({ claim_id: claim.claim_id, classification: 'OBSERVED', label: 'receipt_reports_reverted', rule: null,
         limitations: ['The revert cause is unknown without supported trace or error bytes.',
           'A reverted receipt is not evidence of harm or intent.'] }));
+    }
+    if (claim.classification === 'OBSERVED' && context.trace_subcall_claim_ids?.includes(claim.claim_id)) {
+      anomalies.push(anomaly({ claim_id: claim.claim_id, classification: 'OBSERVED', label: 'trace_reports_reverted_subcall', rule: null,
+        limitations: ['A reverted subcall inside a successful transaction is common EVM behaviour (for example a caught failure).',
+          'Tracer-reported data; it is not evidence of harm or intent.'] }));
     }
     if (claim.classification === 'RULE-BASED' && claim.derivation?.rule === EVENT_COUNT_RULE.id
       && claim.derivation.version === EVENT_COUNT_RULE.version) {

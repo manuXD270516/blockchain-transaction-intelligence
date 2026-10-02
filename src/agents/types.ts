@@ -131,7 +131,7 @@ export interface AnalysisDraft {
   draft_id: string;
   status: 'complete' | 'partial' | 'inconclusive';
   question: string;
-  baseline: { bundle_id: string; extraction_id: string };
+  baseline: { bundle_id: string; extraction_id: string; trace_id?: string };
   claims: Claim[];
   rejected_claims: RejectedClaim[];
   evidence_ids: string[];

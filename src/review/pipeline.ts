@@ -1,4 +1,5 @@
 import type { Investigation } from '../adapters/contracts.js';
+import type { CallTrace } from '../traces/calltrace.js';
 import { AgentValidationError } from '../agents/claims.js';
 import type { AnalysisDraft, Claim, ModelProvider, ReviewModelRequest, ReviewRole } from '../agents/types.js';
 import type { Json } from '../domain/types.js';
@@ -29,7 +30,7 @@ const STATEMENTS: Record<ReportStatus, string> = {
 
 type RoleState = 'completed' | 'not_run' | 'failed';
 
-export interface ReviewInput { investigation: Investigation; draft: AnalysisDraft; started_at: number }
+export interface ReviewInput { investigation: Investigation; draft: AnalysisDraft; started_at: number; call_trace?: CallTrace | null }
 export interface ReviewOptions { provider?: ModelProvider; now?: () => number; telemetry?: Telemetry }
 
 export class EvidenceReviewPipeline {
@@ -54,7 +55,7 @@ export class EvidenceReviewPipeline {
   private async reviewDraft(input: ReviewInput): Promise<ReviewedReport> {
     const { investigation, draft } = input;
     if (new Set(draft.claims.map(claim => claim.claim_id)).size !== draft.claims.length) throw new ReviewInputError('INVALID_DRAFT');
-    const index = buildEvidenceIndex(investigation, draft);
+    const index = buildEvidenceIndex(investigation, draft, input.call_trace ?? null);
     const structural = new Map(draft.claims.map(claim => [claim.claim_id, validateClaim(claim, index)]));
     const candidates = draft.claims.filter(claim => !structural.get(claim.claim_id)!.length);
     const warnings = new Set<string>();
@@ -242,7 +243,8 @@ function buildReport(parts: ReportParts): ReviewedReport {
   const normalized = extracted.normalized;
   const anomalies = deriveAnomalies([...conclusions, ...validatedFacts], {
     receipt_evidence_id: normalized.receipt?.normalization_evidence_id ?? null,
-    receipt_status: typeof normalized.receipt?.fields.status === 'string' ? normalized.receipt.fields.status : null });
+    receipt_status: typeof normalized.receipt?.fields.status === 'string' ? normalized.receipt.fields.status : null,
+    trace_subcall_claim_ids: index.baseline.trace_subcall_claim_ids });
   const timeline: ReviewedReport['timeline'] = [];
   if (normalized.block) timeline.push({ sequence: 'block', kind: 'block', ref: normalized.block.id,
     evidence_ids: [normalized.block.normalization_evidence_id] });
@@ -269,7 +271,9 @@ function buildReport(parts: ReportParts): ReviewedReport {
     .map(item => ({ chunk_id: item!.evidence_id, corpus_snapshot_id: item!.corpus_snapshot_id,
       compatibility: item!.compatibility, excerpt: item!.excerpt }));
   const limitations = new Set([...conclusions, ...validatedFacts].flatMap(claim => claim.limitations));
-  limitations.add('Internal calls and revert reasons are unavailable without supported tracing.');
+  limitations.add(index.baseline.trace === null ? 'Internal calls and revert reasons are unavailable without supported tracing.'
+    : 'Internal calls are tracer-reported frames; reverted frames are attempts, and revert reasons are known only when the tracer reports them.');
+  if (index.baseline.trace?.coverage.truncated) limitations.add('The call trace is truncated; omitted frames do not prove absence of other calls.');
   limitations.add('Review checks support for claims against cited evidence; it is not a security audit.');
   if (investigation.mode === 'synthetic') limitations.add('Synthetic fixture data; it does not describe a public transaction.');
   if (parts.warnings.has('TOOL_EVIDENCE_DAG_UNVERIFIED')) limitations.add('Some tool evidence is resolvable only by envelope id, not by an embedded DAG.');

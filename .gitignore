@@ -13,3 +13,4 @@ corpus/staging*/
 corpus/current/
 .runs/
 dist-demo/
+config/live-tracing.json

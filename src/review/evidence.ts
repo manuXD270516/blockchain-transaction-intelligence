@@ -5,6 +5,7 @@ import { sha256 } from '../fixtures/loader.js';
 import { canonical } from '../normalization/evidence.js';
 import type { EvidenceNode } from '../normalization/evidence.js';
 import type { IndexedEvidence } from './types.js';
+import type { CallTrace } from '../traces/calltrace.js';
 
 export class ReviewInputError extends Error {
   constructor(public readonly code: 'DRAFT_INPUT_MISMATCH' | 'INVALID_DRAFT') { super(code); this.name = 'ReviewInputError'; }
@@ -20,13 +21,16 @@ export interface EvidenceIndex {
   snapshot_conflicts: ReadonlySet<string>;
 }
 
-export function buildEvidenceIndex(investigation: Investigation, draft: AnalysisDraft): EvidenceIndex {
-  const baseline = buildBaseline(investigation);
+export function buildEvidenceIndex(investigation: Investigation, draft: AnalysisDraft, trace: CallTrace | null = null): EvidenceIndex {
+  const baseline = buildBaseline(investigation, trace);
   if (draft.baseline.bundle_id !== baseline.extracted.normalized.bundle_id
+    || draft.baseline.trace_id !== (trace?.trace_id ?? undefined)
     || draft.baseline.extraction_id !== baseline.extracted.extraction_id
     || draft.manifest.chain_id !== investigation.chain_id) throw new ReviewInputError('DRAFT_INPUT_MISMATCH');
   const nodes = new Map<string, EvidenceNode>();
-  for (const node of [...baseline.extracted.normalized.evidence, ...baseline.extracted.derived_evidence]) nodes.set(node.evidence_id, node);
+  for (const node of [...baseline.extracted.normalized.evidence, ...baseline.extracted.derived_evidence, ...(trace?.evidence ?? [])]) {
+    nodes.set(node.evidence_id, node);
+  }
   const verified = new Map<string, boolean>();
   const verify = (id: string, path: Set<string>): boolean => {
     const cached = verified.get(id);

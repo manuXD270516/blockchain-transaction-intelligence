@@ -1,0 +1,8 @@
+{
+  "schema_version": "1.0.0",
+  "enabled": false,
+  "provider_id": "example-tracing-provider",
+  "chain_id": "11155111",
+  "endpoint_host": "sepolia.example-tracing-provider.invalid",
+  "timeout_ms": 20000
+}

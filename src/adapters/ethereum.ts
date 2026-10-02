@@ -3,6 +3,7 @@ import { AdapterError, ADDRESS, HASH, QUANTITY, consistent, match, record, requi
 import type { BlockRead, BlockRef, Capabilities, ChainAdapter, Investigation, Snapshot } from './contracts.js';
 import { httpsTransport, RpcSession } from './rpc.js';
 import type { RpcOptions, RpcTransport } from './rpc.js';
+import { EIP1967_IMPLEMENTATION_SLOT } from '../contracts/identify.js';
 
 export const SEPOLIA_CHAIN_ID = '11155111';
 const CAPABILITIES: Capabilities = Object.freeze({ receipts: true, logs: true, historical_state: 'unknown',
@@ -146,15 +147,16 @@ export class EthereumAdapter implements ChainAdapter {
     });
   }
 
-  async #state(method: 'eth_getBalance' | 'eth_getCode' | 'eth_getLogs', address: string, ref: BlockRef): Promise<BlockRead<Json>> {
+  async #state(method: 'eth_getBalance' | 'eth_getCode' | 'eth_getLogs' | 'eth_getStorageAt', address: string, ref: BlockRef): Promise<BlockRead<Json>> {
     requireInput(match(address, ADDRESS));
     blockReference(ref);
     return this.#run(async session => {
     const { raw, snapshot } = await this.#resolve(session, ref);
-    const data = await session.call(method, method === 'eth_getLogs'
-      ? [{ address, blockHash: snapshot.block_hash }] : [address, raw.number!]);
+    const data = await session.call(method, method === 'eth_getLogs' ? [{ address, blockHash: snapshot.block_hash }]
+      : method === 'eth_getStorageAt' ? [address, EIP1967_IMPLEMENTATION_SLOT, raw.number!] : [address, raw.number!]);
     if (method === 'eth_getBalance') requireData(match(data, QUANTITY));
     else if (method === 'eth_getCode') requireData(match(data, /^0x(?:[0-9a-f]{2})*$/));
+    else if (method === 'eth_getStorageAt') requireData(match(data, /^0x[0-9a-f]{64}$/));
     else {
       const logs = validateLogs(data, snapshot.block_hash, raw.number as string, address);
       for (const log of logs) consistent((raw.transactions as readonly Json[]).includes(log.transactionHash!));
@@ -167,4 +169,6 @@ export class EthereumAdapter implements ChainAdapter {
   getBalance(address: string, ref: BlockRef): Promise<BlockRead<Json>> { return this.#state('eth_getBalance', address, ref); }
   getCode(address: string, ref: BlockRef): Promise<BlockRead<Json>> { return this.#state('eth_getCode', address, ref); }
   getLogs(address: string, ref: BlockRef): Promise<BlockRead<Json>> { return this.#state('eth_getLogs', address, ref); }
+  /** Reads only the EIP-1967 implementation slot at a pinned block, for historical proxy resolution. */
+  getStorageAt(address: string, ref: BlockRef): Promise<BlockRead<Json>> { return this.#state('eth_getStorageAt', address, ref); }
 }

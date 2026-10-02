@@ -17,12 +17,13 @@ async function main(): Promise<void> {
     throw new AgentValidationError(['INVALID_INPUT']);
   }
   const investigation = await readInvestigation('fixture', identifier);
-  const report = await new BoundedAnalysisOrchestrator().runReviewed({ investigation, question: 'Summarize only the supported transaction evidence.' });
   let trace = null;
   if (flags.includes('--with-trace')) {
     trace = await readFixtureCallTrace(identifier, investigation);
     if (trace === null) throw new TraceNotAvailable();
   }
+  const report = await new BoundedAnalysisOrchestrator().runReviewed({ investigation,
+    question: 'Summarize only the supported transaction evidence.', call_trace: trace });
   const view = buildGraphView(extractTokenEvents(investigation), report, MAX_VISUAL_EDGES, trace);
   process.stdout.write(flags.includes('--json') ? `${JSON.stringify(view)}\n` : renderGraphHtml(view));
 }

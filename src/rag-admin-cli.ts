@@ -15,6 +15,7 @@ import { loadCorpus } from './rag/loader.js';
 import { EMBEDDING_DIMENSION, EMBEDDING_MODEL } from './rag/types.js';
 import type { CorpusArtifact, CorpusDocument, CorpusDocumentManifest, CorpusManifest } from './rag/types.js';
 import { manifestIdentity } from './rag/validation.js';
+import { CorpusVersionError, readRegistry, REGISTRY_FILE, registerSnapshot, resolveCitation } from './rag/versions.js';
 
 const HASH = /^[0-9a-f]{64}$/;
 const FILE = /^(?![./\\])(?!(?:.*[\\/])?\.\.(?:[\\/]|$))[a-zA-Z0-9._/-]+$/;
@@ -68,6 +69,22 @@ async function main(): Promise<void> {
     const config = await readConfig(configPath);
     const result = await build(config, first, second);
     process.stdout.write(`${JSON.stringify(result)}\n`);
+    return;
+  }
+  if (command === 'register' && configPath && first && !second) {
+    // Offline: appends <snapshots-root>/<path> to the version registry; earlier versions are never rewritten.
+    const registry = await readRegistry(configPath);
+    const corpus = await loadCorpus(resolve(configPath, first));
+    const next = registerSnapshot(registry, corpus, first);
+    await writeFile(resolve(configPath, REGISTRY_FILE), `${JSON.stringify(next, null, 2)}\n`);
+    const entry = next.snapshots.at(-1)!;
+    process.stdout.write(`${JSON.stringify({ status: 'ok', corpus_snapshot_id: entry.corpus_snapshot_id, path: entry.path,
+      versions: next.snapshots.length, changes: entry.changes })}\n`);
+    return;
+  }
+  if (command === 'resolve' && configPath && first && second) {
+    const citation = await resolveCitation(configPath, await readRegistry(configPath), { corpus_snapshot_id: first, chunk_id: second });
+    process.stdout.write(`${JSON.stringify({ status: 'ok', ...citation })}\n`);
     return;
   }
   if (command === 'verify' && configPath && !first) {
@@ -249,6 +266,6 @@ async function canonicalPdf(bytes: Uint8Array): Promise<{ text: string; pages: {
 }
 
 main().catch(error => {
-  process.stderr.write(`${JSON.stringify({ error: { code: error instanceof CorpusError ? error.code : 'IO_ERROR' } })}\n`);
+  process.stderr.write(`${JSON.stringify({ error: { code: error instanceof CorpusError || error instanceof CorpusVersionError ? error.code : 'IO_ERROR' } })}\n`);
   process.exitCode = 1;
 });

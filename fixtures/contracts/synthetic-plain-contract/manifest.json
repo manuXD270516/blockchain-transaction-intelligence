@@ -1,0 +1,16 @@
+{
+  "schema_version": "1.0.0",
+  "fixture_id": "synthetic-plain-contract",
+  "source_kind": "synthetic",
+  "description": "Synthetic non-proxy contract whose code hash is not registered. Not a public contract.",
+  "chain_id": "31337",
+  "address": "0x9999999999999999999999999999999999999999",
+  "block_hash": "0xdddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+  "block_number": "30",
+  "registry_sha256": "c2d63990304fe18439135f19fbb809de8d6c39f60ae19d4c835428658a6a0fde",
+  "artifact": {
+    "file": "state.json",
+    "sha256": "51bdc95dfbbe9b6c1ed319b8574ef91b06799492d6d5ec12f2186ba712f65501",
+    "bytes": 167
+  }
+}

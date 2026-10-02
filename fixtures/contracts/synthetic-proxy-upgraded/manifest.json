@@ -1,0 +1,16 @@
+{
+  "schema_version": "1.0.0",
+  "fixture_id": "synthetic-proxy-upgraded",
+  "source_kind": "synthetic",
+  "description": "Same synthetic proxy after an upgrade; the new implementation has no registered (historical) ABI. Not a public contract.",
+  "chain_id": "31337",
+  "address": "0x6666666666666666666666666666666666666666",
+  "block_hash": "0xcccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+  "block_number": "20",
+  "registry_sha256": "c2d63990304fe18439135f19fbb809de8d6c39f60ae19d4c835428658a6a0fde",
+  "artifact": {
+    "file": "state.json",
+    "sha256": "cadc9c75d9a6dae876db9bb6870945bce4057b98bd1210adc5cb9b4eef5f21c7",
+    "bytes": 319
+  }
+}

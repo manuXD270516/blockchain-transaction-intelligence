@@ -14,6 +14,8 @@ import type { ProtocolSearch } from '../rag/types.js';
 import { CursorCodec, CursorError } from './cursor.js';
 import { buildCallTrace, MAX_TRACE_DEPTH, MAX_TRACE_FRAMES, TraceError } from '../traces/calltrace.js';
 import type { TraceLimits } from '../traces/calltrace.js';
+import { EMPTY_ABI_REGISTRY, identifyContract } from '../contracts/identify.js';
+import type { AbiRegistry } from '../contracts/identify.js';
 
 export const TOOL_NAMES = ['get_transaction', 'get_receipt', 'get_block', 'get_wallet_balance', 'get_token_transfers',
   'get_contract', 'get_contract_events', 'trace_transaction', 'search_protocol_docs'] as const;
@@ -27,6 +29,8 @@ export interface McpBackend {
   getBalance(address: string, ref: BlockRef): Promise<BlockRead<Json>>;
   getCode(address: string, ref: BlockRef): Promise<BlockRead<Json>>;
   getLogs(address: string, ref: BlockRef): Promise<BlockRead<Json>>;
+  /** Optional: EIP-1967 implementation slot at a pinned block (historical proxy resolution). */
+  getStorageAt?(address: string, ref: BlockRef): Promise<BlockRead<Json>>;
   /** Optional: raw callTracer output as evidence. The bundled Sepolia adapter does not implement it. */
   traceTransaction?(hash: string): Promise<Evidence>;
 }
@@ -71,7 +75,8 @@ export class BlockchainMcpService {
   private readonly cursors: CursorCodec;
   constructor(private readonly backend: McpBackend = new EthereumAdapter(), secret: Uint8Array = randomBytes(32),
     private readonly requestId = randomUUID, private readonly documents: ProtocolSearch = new HybridProtocolSearch(),
-    private readonly traceLimits: TraceLimits = { frames: MAX_TRACE_FRAMES, depth: MAX_TRACE_DEPTH }) {
+    private readonly traceLimits: TraceLimits = { frames: MAX_TRACE_FRAMES, depth: MAX_TRACE_DEPTH },
+    private readonly contractRegistry: AbiRegistry = EMPTY_ABI_REGISTRY) {
     this.cursors = new CursorCodec(secret);
   }
 
@@ -186,11 +191,49 @@ export class BlockchainMcpService {
     }
     if (name === 'get_contract') {
       address(input.address); const read = await this.backend.getCode(input.address, blockRef(input.block)); const bytecode = read.data as string;
-      return envelope('ok', { address: input.address, bytecode, bytecode_sha256: sha256(bytecode), abi: null, source: null,
-        proxy: null, implementation: null }, read.evidence, read.snapshot, { scope: 'bytecode-at-snapshot', complete: true,
-        missing: ['abi', 'source', 'proxy_resolution'] }, ['CONTRACT_IDENTITY_NOT_INFERRED'], null);
+      if (this.backend.getStorageAt === undefined) {
+        return envelope('ok', { address: input.address, bytecode, bytecode_sha256: sha256(bytecode), abi: null, source: null,
+          proxy: null, implementation: null }, read.evidence, read.snapshot, { scope: 'bytecode-at-snapshot', complete: true,
+          missing: ['abi', 'source', 'proxy_resolution'] }, ['CONTRACT_IDENTITY_NOT_INFERRED'], null);
+      }
+      return this.contractIdentity(input.address, bytecode, read);
     }
     return this.contractEvents(input);
+  }
+
+  private async contractIdentity(target: string, bytecode: string, read: BlockRead<Json>): Promise<Record<string, unknown>> {
+    // Every follow-up read is pinned to the block hash of the bytecode read, so proxy and implementation share one snapshot.
+    const pinned: BlockRef = { hash: read.snapshot.block_hash };
+    const evidence: Evidence[] = [...read.evidence];
+    const warnings = new Set<string>();
+    const pinnedRead = async (fn: () => Promise<BlockRead<Json>>): Promise<Json | null> => {
+      try {
+        const value = await fn();
+        if (value.snapshot.block_hash !== read.snapshot.block_hash) throw new AdapterError('INCONSISTENT_SNAPSHOT');
+        evidence.push(...value.evidence);
+        return value.data;
+      } catch (error) {
+        if (!(error instanceof AdapterError) || error.code === 'INCONSISTENT_SNAPSHOT' || error.code === 'POLICY_DENIED') throw error;
+        warnings.add(error.code === 'PRUNED_STATE' ? 'PROXY_SLOT_PRUNED' : 'PROXY_READ_UNAVAILABLE');
+        return null;
+      }
+    };
+    const slot = bytecode === '0x' ? null : await pinnedRead(() => this.backend.getStorageAt!(target, pinned));
+    let implementationCode: string | null = null;
+    if (typeof slot === 'string' && /^0x0{24}[0-9a-f]{40}$/.test(slot) && !/^0x0{64}$/.test(slot)) {
+      const code = await pinnedRead(() => this.backend.getCode(`0x${slot.slice(26)}`, pinned));
+      implementationCode = typeof code === 'string' ? code : null;
+    }
+    const identification = identifyContract({ chain_id: SEPOLIA_CHAIN_ID, address: target, block_hash: read.snapshot.block_hash,
+      code: bytecode, implementation_slot: typeof slot === 'string' ? slot : null, implementation_code: implementationCode }, this.contractRegistry);
+    const { identity, proxy } = identification;
+    const missing = ['source', ...(identity.status === 'identified' ? [] : ['abi']), ...(proxy.kind === 'unknown' ? ['proxy_resolution'] : [])];
+    return envelope('ok', { address: target, bytecode, bytecode_sha256: sha256(bytecode),
+      abi: identity.status === 'identified' ? identity.abi : null, source: null, proxy,
+      implementation: proxy.kind === 'eip1967' ? proxy.implementation : null, identity,
+      identification_id: identification.identification_id, registry_sha256: identification.registry_sha256 },
+    evidence, read.snapshot, { scope: 'bytecode-proxy-identity-at-snapshot', complete: missing.length === 1, missing },
+    [...identification.warnings, ...warnings, ...(identity.status === 'identified' ? [] : ['CONTRACT_IDENTITY_NOT_INFERRED'])], null);
   }
 
   private async callTrace(txHash: string): Promise<Record<string, unknown>> {

@@ -7,6 +7,9 @@ import { ANOMALY_RULES_VERSION, REVIEW_POLICY_VERSION, VALIDATOR_VERSION } from 
 import type { ReviewedReport } from '../review/types.js';
 import { NOOP_TELEMETRY } from '../telemetry/tracer.js';
 import type { Telemetry } from '../telemetry/tracer.js';
+import type { CallTrace } from '../traces/calltrace.js';
+import { QuotaError } from '../runs/quota.js';
+import type { RunQuota } from '../runs/quota.js';
 import { buildBaseline } from './baseline.js';
 import { AgentValidationError, modelClaim, validateModelResponse } from './claims.js';
 import type { AgentTools, AnalysisBudgets, AnalysisDraft, AnalystRole, BudgetUsage, ModelProvider,
@@ -28,6 +31,10 @@ export interface AnalysisInput {
   question: string;
   analyze_contract?: boolean;
   include_wallet_balance?: boolean;
+  /** Optional tracer-reported call trace of the same transaction (call-trace/1.0.0). */
+  call_trace?: CallTrace | null;
+  /** Required when a quota is configured; stored only as a hash. */
+  identity?: string;
 }
 
 export interface OrchestratorOptions {
@@ -35,6 +42,8 @@ export interface OrchestratorOptions {
   tools?: AgentTools;
   now?: () => number;
   telemetry?: Telemetry;
+  /** Optional per-identity quota; when set, every run must declare identity. */
+  quota?: RunQuota;
 }
 
 export class BoundedAnalysisOrchestrator {
@@ -46,6 +55,17 @@ export class BoundedAnalysisOrchestrator {
   }
 
   async runReviewed(input: AnalysisInput): Promise<ReviewedReport> {
+    const release = this.#acquire(input);
+    try { return await this.#runReviewed(input); } finally { release(); }
+  }
+
+  #acquire(input: AnalysisInput): () => void {
+    if (!this.options.quota) return () => {};
+    if (typeof input.identity !== 'string') throw new QuotaError('INVALID_INPUT');
+    return this.options.quota.acquire(input.identity);
+  }
+
+  async #runReviewed(input: AnalysisInput): Promise<ReviewedReport> {
     const manifest = this.options.provider?.manifest;
     const attributes = { chain_id: input.investigation.chain_id, mode: input.investigation.mode,
       block_number: input.investigation.snapshot?.block_number ?? null, block_hash: input.investigation.snapshot?.block_hash ?? null,
@@ -63,7 +83,7 @@ export class BoundedAnalysisOrchestrator {
       });
       const review = new EvidenceReviewPipeline({ now: this.now, telemetry: this.telemetry,
         ...(this.options.provider ? { provider: this.options.provider } : {}) });
-      const report = await review.review({ investigation: input.investigation, draft, started_at: started });
+      const report = await review.review({ investigation: input.investigation, draft, started_at: started, call_trace: input.call_trace ?? null });
       const { analysis, review: reviewBudgets } = report.budgets;
       root.set({ report_status: report.status, report_id: report.report_id, warnings: report.warnings.length,
         anomalies: report.anomalies.length, conclusions: report.conclusions.length,
@@ -80,7 +100,7 @@ export class BoundedAnalysisOrchestrator {
   async run(input: AnalysisInput, startedAt?: number): Promise<AnalysisDraft> {
     if (typeof input.question !== 'string' || input.question.length < 1 || input.question.length > 2000) throw new AgentValidationError(['INVALID_INPUT']);
     const started = startedAt ?? this.now();
-    const baseline = buildBaseline(input.investigation);
+    const baseline = buildBaseline(input.investigation, input.call_trace ?? null);
     const evidence = new Set(baseline.evidence_ids);
     const blockedEvidence = new Set<string>();
     const claims = [...baseline.claims];
@@ -138,7 +158,7 @@ export class BoundedAnalysisOrchestrator {
       input_tokens: initial.max_input_tokens - used.input_tokens, output_tokens: initial.max_output_tokens - used.output_tokens,
       model_calls: initial.max_model_calls - used.model_calls, corrections: initial.max_corrections - used.corrections };
     const stable = { status, question: input.question, baseline: { bundle_id: baseline.extracted.normalized.bundle_id,
-      extraction_id: baseline.extracted.extraction_id }, claims, rejected_claims: rejected,
+      extraction_id: baseline.extracted.extraction_id, ...(baseline.trace ? { trace_id: baseline.trace.trace_id } : {}) }, claims, rejected_claims: rejected,
       evidence_ids: [...evidence].sort(), manifest: { input_hash: sha256(canonical({ question: input.question,
         bundle_id: baseline.extracted.normalized.bundle_id, analyze_contract: input.analyze_contract ?? false,
         include_wallet_balance: input.include_wallet_balance ?? false })), chain_id: input.investigation.chain_id,
@@ -166,7 +186,7 @@ export class BoundedAnalysisOrchestrator {
     results: ToolResultRecord[], errors: string[], used: BudgetUsage, started: number): Promise<ModelResponse> {
     budget(used.model_calls < DEFAULT_ANALYSIS_BUDGETS.max_model_calls && this.now() - started < DEFAULT_ANALYSIS_BUDGETS.deadline_ms);
     used.model_calls++;
-    const context = analysisContext(input, buildBaseline(input.investigation));
+    const context = analysisContext(input, buildBaseline(input.investigation, input.call_trace ?? null));
     const request: ModelRequest = { schema_version: '1.0.0', role, phase,
       prompt_version: provider.manifest.prompt_versions[role], policy_version: POLICY_VERSION,
       context, tool_results: results, validation_errors: errors };

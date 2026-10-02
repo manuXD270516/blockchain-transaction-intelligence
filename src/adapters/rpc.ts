@@ -6,6 +6,7 @@ import { parseJson } from '../fixtures/validation.js';
 import type { Json } from '../domain/types.js';
 import { AdapterError, ADDRESS, HASH, QUANTITY, match, record, requireInput } from './contracts.js';
 import type { Attempt, Evidence } from './contracts.js';
+import { EIP1967_IMPLEMENTATION_SLOT } from '../contracts/identify.js';
 
 export const PROVIDER_ID = 'publicnode-sepolia';
 const HOSTNAME = 'ethereum-sepolia-rpc.publicnode.com';
@@ -25,9 +26,10 @@ export function publicIPv4(address: string): boolean {
   return isIPv4(address) && !deniedNetworks.check(address, 'ipv4');
 }
 
-export const httpsTransport: RpcTransport = (payload, signal, maxBytes) => new Promise((resolve, reject) => {
+/** HTTPS JSON-RPC transport pinned to one administrator-configured host: public IPv4 only, no redirects, identity encoding. */
+export const httpsTransportFor = (hostname: string): RpcTransport => (payload, signal, maxBytes) => new Promise((resolve, reject) => {
   const req = request({
-    hostname: HOSTNAME, port: 443, path: '/', method: 'POST', signal, family: 4,
+    hostname, port: 443, path: '/', method: 'POST', signal, family: 4,
     agent: false,
     headers: { 'Content-Type': 'application/json', Accept: 'application/json', 'Accept-Encoding': 'identity' },
     lookup(host, _options, callback) {
@@ -65,10 +67,11 @@ export const httpsTransport: RpcTransport = (payload, signal, maxBytes) => new P
     : error instanceof AdapterError ? error : new AdapterError('PROVIDER_ERROR', true)));
   req.end(JSON.stringify(payload));
 });
+export const httpsTransport: RpcTransport = httpsTransportFor(HOSTNAME);
 
 const methods = new Set([
   'eth_chainId', 'eth_getTransactionByHash', 'eth_getTransactionReceipt', 'eth_getBlockByHash',
-  'eth_getBlockByNumber', 'eth_getBalance', 'eth_getCode', 'eth_getLogs',
+  'eth_getBlockByNumber', 'eth_getBalance', 'eth_getCode', 'eth_getLogs', 'eth_getStorageAt',
 ]);
 function validParams(method: string, params: readonly Json[]): void {
   if (!methods.has(method)) throw new AdapterError('POLICY_DENIED');
@@ -84,6 +87,9 @@ function validParams(method: string, params: readonly Json[]): void {
       break;
     case 'eth_getBalance':
     case 'eth_getCode': requireInput(params.length === 2 && match(first, ADDRESS) && match(second, QUANTITY)); break;
+    // Only the EIP-1967 implementation slot may be read, and only at a pinned block number (historical proxy resolution).
+    case 'eth_getStorageAt': if (!(params.length === 3 && match(first, ADDRESS) && second === EIP1967_IMPLEMENTATION_SLOT
+      && match(params[2], QUANTITY))) throw new AdapterError('POLICY_DENIED'); break;
     case 'eth_getLogs': requireInput(params.length === 1 && record(first) && Object.keys(first).length === 2
       && match(first.address, ADDRESS) && match(first.blockHash, HASH)); break;
   }
