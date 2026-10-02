@@ -1,5 +1,41 @@
 # Verificación M0–M11
 
+## Requisitos diferidos y publicación preparada (2026-10-02, local)
+
+Sin llamadas reales a RPC, modelos, proveedores de tracing ni GitHub Pages. Commits locales sin push: `b6bbe32`, `a962fa0`, `71c6bcc` y `ba3ce59`.
+
+### Windows
+
+- `npm run check` sobre `ba3ce59`: 203 tests, 201 aprobados, 0 fallidos y 2 omitidos (symlink de archivo en Windows: loader M0 y `demo-cli verify`).
+- `openspec validate --all --strict --no-interactive`: 18 changes válidos.
+- `node dist/eval-cli.js run`: release no bloqueado; 22 gates aprobadas y 2 not_applicable. El `evaluation_result_id` del demo sigue en `487b16ce…`, así que la salida sin traza no cambió.
+- `rag:eval`, `agent:eval` y `review:eval`: mismos valores que el 2026-10-01.
+- `demo:site` y `demo-cli verify`: 6 archivos verificados; `published: false`.
+
+### Contenedor Linux
+
+`scripts/local-linux-ci.ps1` sobre `ba3ce59`, con `--network none`: sólo `lo`, `fetch` con `EAI_AGAIN`. 203 tests, 203 aprobados, 0 omitidos, incluidos ambos tests de symlink. Regeneración de fixtures sin diff, evals iguales y demo con `published: false`. Es evidencia local, no CI remota.
+
+### Cobertura nueva
+
+- **Pages** (4 tests):
+  - `verify` detecta archivo adulterado, extra, ausente, con script o symlink.
+  - La verificación en vivo, con fetch inyectado y sin sockets, sólo emite `published: true` si todas las páginas coinciden byte a byte. Falla con hash distinto, script, URL externa, secreto o CSP ausente.
+  - Sólo acepta URLs `https://<owner>.github.io/<repo>/`.
+- **Requisitos diferidos** (15 tests):
+  - Reporte con traza, sin traza idéntico, revert reason reportado, traza ajena o con id adulterado rechazada, y CLI `--with-trace`.
+  - Cuotas: límite, concurrencia, ventana, identidad hasheada y run no ejecutado.
+  - Corpus: un snapshot v2 derivado con un documento cambiado produce `new_version` y la cita v1 sigue resolviendo.
+  - Contratos: proxy conocido, proxy actualizado sin ABI histórica, contrato plano, slot malformado, checksums y `get_contract` con RPC simulado. `eth_getStorageAt` con otro slot o con tag, y `debug_traceTransaction`, se deniegan antes del transporte.
+  - Tracing live: deshabilitado por defecto, configuración inválida rechazada, request fijo `callTracer`, -32601 → `UNSUPPORTED_CAPABILITY` y límite de 2 MiB.
+- Graphify regenerado: 710 nodos y 2.180 aristas.
+
+### Pendiente
+
+- **Habilitar GitHub Pages:** la llamada `gh api -X POST …/pages -f build_type=workflow` fue denegada por el sistema de permisos y requiere decisión del usuario.
+- **Push y CI remota** de estos commits.
+- **Tracing live:** configuración lista, ejecución pendiente de proveedor.
+
 ## CI remota del 2026-10-02 (GitHub Actions)
 
 El repo pasó a ser público y GitHub Actions dejó de estar bloqueado por facturación. El run [36948710154](https://github.com/manuXD270516/blockchain-transaction-intelligence/actions/runs/36948710154) del workflow "Offline foundation" corrió sobre `ea1effc` (M0–M11, trazas de llamadas, licencia MIT y `workflow_dispatch`) en `ubuntu-latest`:

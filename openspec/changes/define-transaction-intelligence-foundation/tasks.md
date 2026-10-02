@@ -20,4 +20,9 @@
 - [x] 2.11 M10: incorporar telemetría y retención; evaluation-observability; verificar correlación, redacción y borrado. Change add-local-observability-retention; tests de trace_id único, redacción idempotente de credenciales, OTLP-JSON local y barrido/borrado sin tocar fixtures. Cuotas por identidad diferidas (sin servicio con visitantes). Re-verificado 2026-10-01.
 - [x] 2.12 M11: preparar change de demo y despliegue; todas las capabilities; verificar seguridad, fixtures curados y gates antes de publicar. Change prepare-public-demo; build bloqueada por gates/fixture adulterado, auditoría sin contenido activo ni URLs externas, `published: false`. La publicación sigue pendiente de autorización (prepare-public-demo 3.2). Re-verificado 2026-10-01.
 
+- [x] 2.13 Requisitos diferidos de la fundación: change complete-foundation-deferred-requirements. Reporte revisado con trazas (claims OBSERVED de subllamada revertida, revert reason reportado y DELEGATECALL; anomalía `trace_reports_reverted_subcall`), cuotas por identidad, registro de versiones de corpus con resolución de citas, identificación de contrato/proxy EIP-1967 por bloque con ABI desde registro con procedencia (`eth_getStorageAt` sólo slot fijo) y backend de tracing live deshabilitado por defecto. 15 tests offline; verificado localmente en Windows y contenedor Linux sin red el 2026-10-02.
+
+## 3. Cierre
+
+- [ ] 3.1 Registrar la CI Linux remota de complete-foundation-deferred-requirements y archivar este change. Tracing live: configuración lista, ejecución pendiente de proveedor (change enable-live-tracing).
 No marcar tareas de implementación como completas por existir documentación. Las tareas 2.4–2.12 se marcaron el 2026-10-01 con la evidencia ejecutada citada (ver docs/verification.md). No archivar este change mientras las CI Linux remotas de sus changes de implementación sigan sin registrar; futuros changes deberán mantener la trazabilidad de estos contratos y de cualquier delta.

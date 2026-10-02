@@ -11,3 +11,7 @@
 - [x] 2.4 Identificación de contratos, fixtures, `getStorageAt` con slot fijo e integración en `get_contract`.
 - [x] 2.5 Backend de tracing live deshabilitado, configuración de ejemplo y tests con transporte simulado.
 - [ ] 2.6 Ejecutar check, evals y OpenSpec estricto; refrescar Graphify y documentar.
+
+## Entorno
+
+- [ ] 3.1 CI Linux remota con red aislada. Pendiente de push (2026-10-02); hay evidencia local en contenedor Linux sin red registrada en docs/verification.md.

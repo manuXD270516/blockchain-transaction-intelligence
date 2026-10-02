@@ -2,7 +2,7 @@
 
 Plataforma analítica y educativa para investigar transacciones EVM mediante datos públicos, MCP, agentes y RAG con evidencia verificable.
 
-**Estado: M0–M11 y las trazas de llamadas offline están implementados y verificados localmente y en GitHub Actions (run [36948710154](https://github.com/manuXD270516/blockchain-transaction-intelligence/actions/runs/36948710154), 184/184 tests bajo red aislada).** Hay replay offline, adapter Ethereum Sepolia de sólo lectura, normalización canónica, extracción estricta de eventos estándar, trazas de llamadas sintéticas, servidor MCP stdio, retrieval documental versionado, orquestación analítica acotada, revisión de evidencia con reporte, grafo HTML con evidencia, runner de evaluación con gates, telemetría local con retención y un sitio de demo estático preparado pero **no publicado**. No firma, custodia, invierte, despliega contratos ni mueve fondos, tampoco en testnet.
+**Estado: M0–M11 y las trazas de llamadas offline están implementados y verificados localmente y en GitHub Actions (run [36948710154](https://github.com/manuXD270516/blockchain-transaction-intelligence/actions/runs/36948710154), 184/184 tests bajo red aislada).** Hay replay offline, adapter Ethereum Sepolia de sólo lectura, normalización canónica, extracción estricta de eventos estándar, trazas de llamadas sintéticas, servidor MCP stdio, retrieval documental versionado, orquestación analítica acotada, revisión de evidencia con reporte, grafo HTML con evidencia, runner de evaluación con gates, telemetría local con retención y cuotas por identidad, identificación de contratos/proxies por bloque, versiones de corpus con resolución de citas y un sitio de demo estático con workflow de publicación en GitHub Pages preparado pero **todavía no publicado**. El tracing live tiene la configuración lista; su ejecución queda pendiente de un proveedor con `debug_traceTransaction`. No firma, custodia, invierte, despliega contratos ni mueve fondos, tampoco en testnet.
 
 [Listado completo de funcionalidades y status](docs/feature-status.md) · [Validación M0–M11](docs/verification.md)
 
@@ -100,7 +100,38 @@ Normaliza trazas `callTracer` sintéticas de `fixtures/call-traces/`, verificada
 - Si la raíz revierte sin `revertReason`, la causa queda desconocida.
 - Límites: 1000 frames y profundidad 64; al superarlos, la cobertura queda `partial`.
 
-No hay tracing live: la allowlist RPC no incluye `debug_*`. Con el adapter Sepolia, `trace_transaction` sigue `unavailable`; sólo devuelve frames con un backend de trazas inyectado, como en los tests. El reporte revisado M7 todavía no consume trazas: la diferencia entre receipt exitoso y subllamada revertida se ve en la salida de traza y en el grafo. [Contrato](openspec/changes/add-offline-call-traces/design.md).
+`npm run report -- synthetic-token-events --with-trace` hace que el reporte revisado consuma la traza:
+
+- publica claims OBSERVED de subllamada revertida, de revert reason (sólo si el tracer la reporta) y de DELEGATECALL, citando la evidencia de cada frame;
+- añade la anomalía OBSERVED `trace_reports_reverted_subcall`, que no es una acusación.
+
+Sin traza, el reporte es idéntico byte a byte.
+
+**Tracing live: configuración lista, ejecución pendiente de proveedor.** `src/adapters/tracing.ts` envía sólo `debug_traceTransaction` con `callTracer` fijo a un host HTTPS configurado por administrador. Está deshabilitado salvo una configuración local con `enabled: true` (ver `config/live-tracing.example.json`; `config/live-tracing.json` está en `.gitignore`) y no forma parte de la allowlist RPC principal. PublicNode no ofrece `debug_*`, y los proveedores que lo ofrecen suelen requerir cuenta o API key, así que no se ha ejecutado ninguna traza real. Con el adapter Sepolia, `trace_transaction` sigue `unavailable`. Pasos pendientes: [enable-live-tracing](openspec/changes/enable-live-tracing/proposal.md). [Contrato](openspec/changes/add-offline-call-traces/design.md).
+
+## Identificación de contratos y proxies
+
+```powershell
+npm run build
+npm run contract -- synthetic-proxy-known
+npm run contract -- synthetic-proxy-upgraded
+```
+
+Identifica un contrato sólo con lecturas del bloque del caso:
+
+- code hash;
+- slot EIP-1967 de implementación, leído con `eth_getStorageAt` y sólo ese slot;
+- un registro local de ABI con procedencia, indexado por code hash.
+
+Un proxy actualizado cuya implementación nueva no está registrada queda con identidad `unknown` (`NO_HISTORICAL_ABI`); nunca se decodifica con la ABI de otra implementación ni se infiere identidad por dirección. `get_contract` del servidor MCP devuelve `proxy`, `implementation` e `identity` con evidencia en un snapshot fijado. El registro incluido es sintético.
+
+## Versiones de corpus
+
+```powershell
+node dist/rag-admin-cli.js resolve corpus/snapshots <corpus_snapshot_id> <chunk_id>
+```
+
+`corpus/snapshots/index.json` es un registro append-only de snapshots con linaje por `canonical_uri`: `added`, `removed` y `new_version`. Cada snapshot nuevo se escribe en otro directorio con `rag-admin-cli build` y se añade con `rag-admin-cli register`. Una cita `(corpus_snapshot_id, chunk_id)` se resuelve contra el snapshot original, que se re-verifica entero.
 
 ## Servidor MCP read-only M4
 
@@ -189,7 +220,7 @@ Con un tracer inyectado, cada run produce un `trace_id` y spans para run, análi
 
 `RunStore` guarda reporte y traza por run en `.runs/` (ignorado por git). Retención: 30 días por defecto y 24 h con `--profile demo`. `sweep` borra expirados y corruptos. Rechaza raíces dentro de `fixtures`, `corpus`, `evals` o `demo` y la raíz del proyecto, así que borrar un run nunca toca datos públicos. Las cuotas por identidad quedan diferidas: la demo es estática y no acepta consultas.
 
-## Demo pública M11 (preparada, no publicada)
+## Demo pública M11 (workflow de Pages listo, sin publicar)
 
 ```powershell
 npm run demo:site
@@ -197,7 +228,16 @@ npm run demo:site
 
 Genera `dist-demo/` (ignorado por git) desde los fixtures curados en `demo/fixtures.json`: un índice con propósito, límites, privacidad y estado de las gates, una página por fixture con reporte revisado y grafo, y el dashboard de evaluación. No hay JavaScript, formularios, cookies, recursos externos, wallet ni consultas live, y cada página lleva CSP estricta. La build se niega si el runner M9 bloquea release, si un fixture no pasa sus checksums o si la auditoría del HTML encuentra contenido activo, URLs externas o enlaces rotos. Escribe un `manifest.json` con los hashes de cada archivo.
 
-Hosting propuesto: servir `dist-demo/` como sitio estático (por ejemplo GitHub Pages; la CSP va en meta porque Pages no permite cabeceras). **No se ha desplegado nada.** Publicar requiere autorización explícita y, con el repositorio privado, un plan que permita Pages o un host estático alternativo.
+Publicación: `.github/workflows/pages.yml` (`Publish demo`, acciones fijadas por SHA) ejecuta en orden:
+
+1. tests sin red;
+2. el runner de evaluación, que bloquea si `release_blocked`;
+3. la build con gates;
+4. `node dist/demo-cli.js verify dist-demo` (hashes, archivos exactos y auditoría sobre disco);
+5. el despliegue en GitHub Pages;
+6. `scripts/verify-pages.mjs`, que compara cada página publicada byte a byte con el manifest y comprueba CSP y ausencia de secretos. Es el único camino que emite `published: true`.
+
+URL prevista: https://manuxd270516.github.io/blockchain-transaction-intelligence/. **Todavía no se ha desplegado**: falta habilitar Pages (`build_type=workflow`) y hacer push. La CSP va en `<meta>` porque Pages no permite cabeceras propias.
 
 ## Estructura y límites
 
@@ -205,6 +245,10 @@ Hosting propuesto: servir `dist-demo/` como sitio estático (por ejemplo GitHub 
 - `src/adapters`: contratos, fixture adapter, política RPC, transporte HTTPS y Ethereum adapter.
 - `src/normalization`: normalizador puro, cantidades exactas y evidencia de fuentes/derivaciones.
 - `src/events`: decodificador estricto, transferencias event-reported y grafo base.
+- `src/contracts`: identificación de contrato/proxy EIP-1967 por bloque y registro de ABI con procedencia; `src/contract-cli.ts`.
+- `src/runs/quota.ts`: cuotas por identidad (hash), inyectables en el orquestador.
+- `src/rag/versions.ts`: registro de versiones de corpus y resolución de citas.
+- `src/adapters/tracing.ts`: backend de tracing live deshabilitado por defecto.
 - `src/traces`: loader de fixtures de traza y normalizador `call-trace/1.0.0`; `src/calltrace-cli.ts`.
 - `src/rag`: loader de snapshots, WordPiece/MiniLM WASM y retrieval híbrido; las CLIs administrativas/eval están en `src/rag-*.ts`.
 - `src/agents`: claims, baseline, provider interface y orquestador acotado; `src/analyze-cli.ts` ofrece replay analítico offline.
@@ -226,7 +270,7 @@ Los hashes detectan cambios respecto al manifest, no prueban autenticidad del pr
 
 ## OpenSpec
 
-Changes de implementación: [M0 bootstrap](openspec/changes/bootstrap-offline-foundation/proposal.md), [M1 adapter](openspec/changes/add-ethereum-readonly-adapter/proposal.md), [M2 normalización](openspec/changes/normalize-transaction-evidence/proposal.md), [M3 eventos](openspec/changes/extract-standard-token-events/proposal.md), [M4 MCP](openspec/changes/add-readonly-mcp-server/proposal.md), [M5 RAG](openspec/changes/add-versioned-protocol-rag/proposal.md), [M6 orquestación](openspec/changes/add-bounded-analysis-orchestrator/proposal.md), [M7 revisión](openspec/changes/add-evidence-review-pipeline/proposal.md), [M8 grafo](openspec/changes/add-evidence-graph-view/proposal.md), [M9 evaluación](openspec/changes/consolidate-evaluation-runner/proposal.md), [M10 observabilidad](openspec/changes/add-local-observability-retention/proposal.md), [M11 demo](openspec/changes/prepare-public-demo/proposal.md) y [trazas de llamadas offline](openspec/changes/add-offline-call-traces/proposal.md).
+Changes de implementación: [M0 bootstrap](openspec/changes/bootstrap-offline-foundation/proposal.md), [M1 adapter](openspec/changes/add-ethereum-readonly-adapter/proposal.md), [M2 normalización](openspec/changes/normalize-transaction-evidence/proposal.md), [M3 eventos](openspec/changes/extract-standard-token-events/proposal.md), [M4 MCP](openspec/changes/add-readonly-mcp-server/proposal.md), [M5 RAG](openspec/changes/add-versioned-protocol-rag/proposal.md), [M6 orquestación](openspec/changes/add-bounded-analysis-orchestrator/proposal.md), [M7 revisión](openspec/changes/add-evidence-review-pipeline/proposal.md), [M8 grafo](openspec/changes/add-evidence-graph-view/proposal.md), [M9 evaluación](openspec/changes/consolidate-evaluation-runner/proposal.md), [M10 observabilidad](openspec/changes/add-local-observability-retention/proposal.md), [M11 demo](openspec/changes/prepare-public-demo/proposal.md), [trazas de llamadas offline](openspec/changes/add-offline-call-traces/proposal.md) (archivados en `openspec/changes/archive/`). Abiertos: [publicación en Pages](openspec/changes/publish-demo-github-pages/proposal.md), [requisitos diferidos de la fundación](openspec/changes/complete-foundation-deferred-requirements/proposal.md) y [tracing live](openspec/changes/enable-live-tracing/proposal.md).
 
 Primer change: [define-transaction-intelligence-foundation](openspec/changes/define-transaction-intelligence-foundation/proposal.md).
 
@@ -241,4 +285,8 @@ Primer change: [define-transaction-intelligence-foundation](openspec/changes/def
 
 El diseño fija contratos objetivo M0–M11. Cada hito tuvo su propio change de implementación con criterios de aceptación antes de escribir código. Las tareas 2.1–2.12 están marcadas con la evidencia que las verifica.
 
-Los changes de cada hito están archivados y sus specs promovidas a `openspec/specs/`. Siguen abiertos este change de fundación, porque algunos de sus requisitos están diferidos, y `prepare-public-demo`, por la publicación del sitio. Siguen diferidos el tracing live, la identificación de proxies/ABI, las cuotas por identidad y la publicación de la demo.
+Los changes de cada hito están archivados y sus specs promovidas a `openspec/specs/`. Siguen abiertos:
+
+- este change de fundación, hasta registrar la CI remota de sus requisitos diferidos ya implementados;
+- `prepare-public-demo` y `publish-demo-github-pages`, hasta publicar el sitio;
+- `enable-live-tracing`, con configuración lista y ejecución pendiente de proveedor.
