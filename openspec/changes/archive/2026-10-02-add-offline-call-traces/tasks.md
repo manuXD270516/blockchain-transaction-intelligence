@@ -13,4 +13,4 @@
 
 ## Entorno
 
-- [ ] 3.1 CI Linux remota. No ejecutada: GitHub Actions bloqueado por facturación; sólo evidencia local en contenedor Linux.
+- [x] 3.1 CI Linux remota. No ejecutada: GitHub Actions bloqueado por facturación; sólo evidencia local en contenedor Linux. **Cumplida 2026-10-02:** run [36948710154](https://github.com/manuXD270516/blockchain-transaction-intelligence/actions/runs/36948710154) de GitHub Actions (`ubuntu-latest`) sobre `ea1effc`: typecheck, build y 184/184 tests bajo `sudo unshare --net` (incluida la prueba de symlink de archivo) y regeneración de fixtures sin diff.

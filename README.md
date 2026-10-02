@@ -2,7 +2,7 @@
 
 Plataforma analítica y educativa para investigar transacciones EVM mediante datos públicos, MCP, agentes y RAG con evidencia verificable.
 
-**Estado: M0–M6 implementados y verificados local y remotamente (GitHub Actions). M7–M11 y las trazas de llamadas offline están implementados y verificados localmente en Windows y en un contenedor Linux sin red; eso es evidencia local, no CI remota: GitHub Actions está bloqueado por facturación de la cuenta.** Hay replay offline, adapter Ethereum Sepolia de sólo lectura, normalización canónica, extracción estricta de eventos estándar, trazas de llamadas sintéticas, servidor MCP stdio, retrieval documental versionado, orquestación analítica acotada, revisión de evidencia con reporte, grafo HTML con evidencia, runner de evaluación con gates, telemetría local con retención y un sitio de demo estático preparado pero **no publicado**. No firma, custodia, invierte, despliega contratos ni mueve fondos, tampoco en testnet.
+**Estado: M0–M11 y las trazas de llamadas offline están implementados y verificados localmente y en GitHub Actions (run [36948710154](https://github.com/manuXD270516/blockchain-transaction-intelligence/actions/runs/36948710154), 184/184 tests bajo red aislada).** Hay replay offline, adapter Ethereum Sepolia de sólo lectura, normalización canónica, extracción estricta de eventos estándar, trazas de llamadas sintéticas, servidor MCP stdio, retrieval documental versionado, orquestación analítica acotada, revisión de evidencia con reporte, grafo HTML con evidencia, runner de evaluación con gates, telemetría local con retención y un sitio de demo estático preparado pero **no publicado**. No firma, custodia, invierte, despliega contratos ni mueve fondos, tampoco en testnet.
 
 [Listado completo de funcionalidades y status](docs/feature-status.md) · [Validación M0–M11](docs/verification.md)
 
@@ -220,7 +220,7 @@ Hosting propuesto: servir `dist-demo/` como sitio estático (por ejemplo GitHub 
 - `fixtures`: cuatro escenarios sintéticos versionados y sus checksums; `fixtures/call-traces` añade dos trazas sintéticas ligadas a ellos.
 - `test`: oráculos, escenarios RPC sintéticos, pruebas de seguridad/consistencia.
 - `scripts/generate-fixtures.mjs`: utilidad de mantenimiento; regenera los fixtures sintéticos, no se ejecuta durante replay.
-- `.github/workflows/ci.yml`: suite Linux con namespace de red aislado. Se ejecutó en GitHub Actions hasta M6; desde M7 no corre por el bloqueo de facturación. `scripts/local-linux-ci.ps1` reproduce sus pasos en Docker local sin red como evidencia local, no como CI.
+- `.github/workflows/ci.yml`: suite Linux con namespace de red aislado. Corre en GitHub Actions en cada push (último registro: run [36948710154](https://github.com/manuXD270516/blockchain-transaction-intelligence/actions/runs/36948710154)). `scripts/local-linux-ci.ps1` reproduce sus pasos en Docker local sin red.
 
 Los hashes detectan cambios respecto al manifest, no prueban autenticidad del proveedor. Datos raw desconocidos no se ejecutan. Configurar el fixture root como sólo lectura en despliegue; el loader no es un sandbox contra procesos locales hostiles que cambien directorios concurrentemente. La procedencia live reside en la respuesta; su persistencia y el modelo completo de claims llegarán después.
 
@@ -239,4 +239,6 @@ Primer change: [define-transaction-intelligence-foundation](openspec/changes/def
 - [Roadmap](openspec/changes/define-transaction-intelligence-foundation/roadmap.md)
 - [Tareas futuras](openspec/changes/define-transaction-intelligence-foundation/tasks.md)
 
-El diseño fija contratos objetivo M0–M11. Cada hito tuvo su propio change de implementación con criterios de aceptación antes de escribir código. Las tareas 2.1–2.12 están marcadas con la evidencia que las verifica.`n`nEl change sigue abierto, igual que el resto: ninguno se archiva mientras su CI Linux remota no esté registrada. Siguen diferidos el tracing live, la identificación de proxies/ABI, las cuotas por identidad y la publicación de la demo.
+El diseño fija contratos objetivo M0–M11. Cada hito tuvo su propio change de implementación con criterios de aceptación antes de escribir código. Las tareas 2.1–2.12 están marcadas con la evidencia que las verifica.
+
+Los changes de cada hito están archivados y sus specs promovidas a `openspec/specs/`. Siguen abiertos este change de fundación, porque algunos de sus requisitos están diferidos, y `prepare-public-demo`, por la publicación del sitio. Siguen diferidos el tracing live, la identificación de proxies/ABI, las cuotas por identidad y la publicación de la demo.

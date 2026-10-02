@@ -14,4 +14,4 @@
 
 ## Entorno
 
-- [ ] 3.1 Ejecutar CI Linux remota con red aislada antes de archivar. Omitida por decisión del usuario el 2026-09-29: el run 36534722111 no se inició por facturación de la cuenta GitHub.
+- [x] 3.1 Ejecutar CI Linux remota con red aislada antes de archivar. Omitida por decisión del usuario el 2026-09-29: el run 36534722111 no se inició por facturación de la cuenta GitHub. **Cumplida 2026-10-02:** run [36948710154](https://github.com/manuXD270516/blockchain-transaction-intelligence/actions/runs/36948710154) de GitHub Actions (`ubuntu-latest`) sobre `ea1effc`: typecheck, build y 184/184 tests bajo `sudo unshare --net` (incluida la prueba de symlink de archivo) y regeneración de fixtures sin diff.

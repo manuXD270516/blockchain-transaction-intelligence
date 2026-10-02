@@ -1,5 +1,15 @@
 # Verificación M0–M11
 
+## CI remota del 2026-10-02 (GitHub Actions)
+
+El repo pasó a ser público y GitHub Actions dejó de estar bloqueado por facturación. El run [36948710154](https://github.com/manuXD270516/blockchain-transaction-intelligence/actions/runs/36948710154) del workflow "Offline foundation" corrió sobre `ea1effc` (M0–M11, trazas de llamadas, licencia MIT y `workflow_dispatch`) en `ubuntu-latest`:
+
+- `npm ci --ignore-scripts`, typecheck y build correctos.
+- Tests bajo `sudo unshare --net`: 184 tests, 184 aprobados, 0 fallidos y 0 omitidos, incluida "artifact symlink cannot escape fixture directory".
+- Regeneración de fixtures con `git diff --exit-code -- fixtures/` sin diff.
+
+Con este run se cerró la tarea 3.1 de los diez changes que la tenían abierta y se archivaron los changes completos. `prepare-public-demo` sigue abierto por la publicación del sitio (3.2), y `define-transaction-intelligence-foundation` por los requisitos diferidos que lista su propio change.
+
 ## Re-verificación del 2026-10-01 (local)
 
 Entorno: Windows, Node 22.23.1, npm 10.9.8 y OpenSpec 1.11.0. Sin credenciales, proveedor de modelos, RPC ni red, salvo para `npm ci` y la descarga de la imagen Docker.
@@ -19,7 +29,7 @@ Entorno: Windows, Node 22.23.1, npm 10.9.8 y OpenSpec 1.11.0. Sin credenciales, 
 
 ### Contenedor Linux
 
-`scripts/local-linux-ci.ps1` usa `node:22.23.1-bookworm` en Docker 29.8.1 sobre WSL2, kernel 6.6.87.2. Es evidencia local: no sustituye ni registra la CI remota de GitHub Actions, bloqueada por facturación.
+`scripts/local-linux-ci.ps1` usa `node:22.23.1-bookworm` en Docker 29.8.1 sobre WSL2, kernel 6.6.87.2. Es evidencia local: no sustituye ni registra la CI remota de GitHub Actions, que entonces estaba bloqueada por facturación (ver la sección del 2026-10-02).
 
 1. Clona el commit confirmado y ejecuta `npm ci --ignore-scripts`, typecheck y build.
 2. Con `--network none`, verifica el aislamiento: sólo la interfaz `lo` y `fetch` falla con `EAI_AGAIN`.

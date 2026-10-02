@@ -1,6 +1,6 @@
 # Funcionalidades y status
 
-Actualizado: 2026-10-01, tras re-verificar M0–M11 e implementar las trazas de llamadas offline. La CI Linux remota de M7–M11 y de las trazas no se ejecutó: GitHub Actions está bloqueado por facturación y el usuario decidió omitirla. Su verificación es local, en Windows y en un contenedor Linux sin red (ver docs/verification.md); no es CI remota. Implementado significa código ejecutable; validado no implica todos los requisitos M0–M11 completos. Las especificaciones de fundación siguen abiertas.
+Actualizado: 2026-10-02. M0–M11 y las trazas de llamadas offline están verificados localmente y en GitHub Actions (run [36948710154](https://github.com/manuXD270516/blockchain-transaction-intelligence/actions/runs/36948710154); ver docs/verification.md). Implementado significa código ejecutable; validado no implica todos los requisitos M0–M11 completos. Los changes de cada hito están archivados; el de fundación sigue abierto por sus requisitos diferidos.
 
 | Hito | Funcionalidad | Estado | Evidencia / límite |
 |---|---|---|---|
@@ -66,7 +66,7 @@ Actualizado: 2026-10-01, tras re-verificar M0–M11 e implementar las trazas de 
 | M7 | Validadores estructurales | Implementado y validado localmente | ids/hash/DAG, snapshots, documentos conflicting, clases, overreach de eventos y lenguaje prohibido |
 | M7 | Revisión de claims OBSERVED/RULE-BASED/MODEL-INFERRED | Implementado y validado localmente | supported/rejected/needs_revision; consenso no promociona MODEL-INFERRED |
 | M7 | Anomalías sin atribución automática de fraude | Implementado y validado localmente | receipt revertido (OBSERVED) y umbral educativo de 20 eventos (RULE-BASED); sin anomalías de modelo |
-| M7 | Reporte accepted/partial/inconclusive | Implementado y validado localmente | CLI offline; sin provider queda inconclusive con hechos validados; CI remota pendiente |
+| M7 | Reporte accepted/partial/inconclusive | Implementado y validado (local y CI remota) | CLI offline; sin provider queda inconclusive con hechos validados |
 | M7 | Eval de citas y unsupported claims | Implementado y validado localmente | 11 casos; status 1,00 y cero en evidencia irresoluble, acusaciones, promociones, accepted no soportado y tools |
 | M8 | Grafo de transacciones con evidencia | Implementado y validado localmente | HTML/SVG estático sin scripts, CSP, anclas por arista, executed/reverted/unknown, truncación a 200 |
 | M8 | Llamadas internas en el grafo | Implementado con trazas offline y validado localmente | `--with-trace`: aristas `internal_call` executed/reverted con evidencia por frame; sin traza: `NO_CALL_TRACE` y vista idéntica |
@@ -82,4 +82,4 @@ Actualizado: 2026-10-01, tras re-verificar M0–M11 e implementar las trazas de 
 | M11 | Hosting y publicación | Preparado; no publicado | requiere autorización del usuario y host compatible con repositorio privado |
 | Exclusiones | Inversiones, bot financiero, custodia, firma, envío de fondos | Fuera de alcance | sin signer ni métodos RPC mutantes |
 
-Pendiente: CI Linux remota de M7–M11 y de trazas (tareas 3.1, omitidas por el bloqueo de facturación; existe evidencia local en contenedor Linux sin red) y publicación de la demo (M11 3.2, requiere autorización). Las tareas 3.1 de M0–M3 siguen sin marcar aunque la ejecución de GitHub Actions sobre `76a96b2` (que ya contenía M0–M3) está registrada en verification.md; marcarlas requiere decisión del usuario. Tracing, proveedores remotos, nuevas redes y cualquier servicio con visitantes requieren contratos y configuración explícitos antes de habilitarse. Ningún change se ha archivado.
+Pendiente: publicación de la demo (M11 3.2, requiere autorización). La CI Linux remota de todos los hitos quedó registrada el 2026-10-02. Tracing, proveedores remotos, nuevas redes y cualquier servicio con visitantes requieren contratos y configuración explícitos antes de habilitarse. Los changes de cada hito se archivaron el 2026-10-02; siguen abiertos `prepare-public-demo` y `define-transaction-intelligence-foundation`.

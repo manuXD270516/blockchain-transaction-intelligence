@@ -11,4 +11,4 @@
 - [x] 2.6 Actualizar README, inventario y resultados de verificación.
 
 ## 3. Entorno
-- [ ] 3.1 Ejecutar CI Linux remoto y registrar resultado antes de archivar.
+- [x] 3.1 Ejecutar CI Linux remoto y registrar resultado antes de archivar. **Cumplida 2026-10-02:** run [36948710154](https://github.com/manuXD270516/blockchain-transaction-intelligence/actions/runs/36948710154) de GitHub Actions (`ubuntu-latest`) sobre `ea1effc`: typecheck, build y 184/184 tests bajo `sudo unshare --net` (incluida la prueba de symlink de archivo) y regeneración de fixtures sin diff.
