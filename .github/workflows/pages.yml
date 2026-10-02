@@ -1,0 +1,84 @@
+name: Publish demo
+# Gated publication of the static demo (openspec change publish-demo-github-pages).
+# Order: offline tests -> evaluation gates -> gated site build -> on-disk verify -> deploy -> live verification.
+on:
+  push:
+    branches: [master]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: pages
+  cancel-in-progress: false
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - run: npm run typecheck
+      - run: npm run build
+      - name: Test with network namespace isolated
+        run: sudo unshare --net -- "$(command -v node)" --test test/*.test.mjs
+      - name: Evaluation gates (exit 1 when release is blocked)
+        run: sudo unshare --net -- "$(command -v node)" dist/eval-cli.js run --repetitions 5 > evaluation.json
+      - name: Build demo site behind its own gates
+        run: sudo unshare --net -- "$(command -v node)" dist/demo-cli.js build --out dist-demo
+      - name: Verify built site on disk
+        run: node dist/demo-cli.js verify dist-demo
+      - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
+        with:
+          path: dist-demo
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: demo-manifest
+          path: |
+            dist-demo/manifest.json
+            evaluation.json
+          if-no-files-found: error
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    outputs:
+      page_url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5.0.1
+  verify-live:
+    needs: deploy
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: .nvmrc
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: demo-manifest
+          path: demo-manifest
+      - name: Verify the deployed site byte for byte and record publication
+        env:
+          PAGE_URL: ${{ needs.deploy.outputs.page_url }}
+          COMMIT: ${{ github.sha }}
+        run: |
+          for attempt in 1 2 3 4 5 6; do
+            if node scripts/verify-pages.mjs "$PAGE_URL" demo-manifest/dist-demo/manifest.json "$COMMIT" > publication.json; then break; fi
+            if [ "$attempt" = 6 ]; then cat publication.json; exit 1; fi
+            sleep 20
+          done
+          cat publication.json
+          { echo '```json'; cat publication.json; echo '```'; } >> "$GITHUB_STEP_SUMMARY"

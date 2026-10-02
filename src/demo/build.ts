@@ -96,6 +96,39 @@ export async function buildDemo(options: DemoBuildOptions = {}): Promise<DemoMan
   return manifest;
 }
 
+/** Re-reads a built site from disk and checks manifest hashes, exact file set and the active-content audit. Offline. */
+export async function verifyDemoOutput(out: string): Promise<DemoManifest> {
+  const problems: string[] = [];
+  let manifest: DemoManifest;
+  try {
+    manifest = JSON.parse(await readFile(join(out, 'manifest.json'), 'utf8')) as DemoManifest;
+  } catch { throw new DemoBuildError('UNSAFE_OUTPUT', ['manifest.json: missing or invalid']); }
+  if (manifest?.schema_version !== '1.0.0' || typeof manifest.files !== 'object' || manifest.files === null
+    || typeof manifest.evaluation_result_id !== 'string') throw new DemoBuildError('UNSAFE_OUTPUT', ['manifest.json: invalid schema']);
+  const present: string[] = [];
+  const walk = async (dir: string, prefix: string): Promise<void> => {
+    for (const entry of await readdir(dir, { withFileTypes: true })) {
+      const path = prefix ? `${prefix}/${entry.name}` : entry.name;
+      if (entry.isDirectory()) await walk(join(dir, entry.name), path);
+      else if (entry.isFile()) present.push(path);
+      else problems.push(`${path}: not a regular file`);
+    }
+  };
+  await walk(out, '');
+  const expected = new Set([...Object.keys(manifest.files), 'manifest.json']);
+  for (const path of present) if (!expected.has(path)) problems.push(`${path}: not listed in manifest`);
+  const files = new Map<string, string>();
+  for (const [path, hash] of Object.entries(manifest.files)) {
+    if (!present.includes(path)) { problems.push(`${path}: missing`); continue; }
+    const html = await readFile(join(out, path), 'utf8');
+    if (sha256(html) !== hash) problems.push(`${path}: hash mismatch`);
+    files.set(path, html);
+  }
+  problems.push(...auditSite(files));
+  if (problems.length) throw new DemoBuildError('UNSAFE_OUTPUT', problems.sort());
+  return manifest;
+}
+
 function inside(child: string, parent: string): boolean {
   const rel = relative(parent, child);
   return rel === '' || (!rel.startsWith('..') && !isAbsolute(rel));
