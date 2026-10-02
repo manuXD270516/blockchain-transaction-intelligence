@@ -71,7 +71,7 @@ Para datos live, de forma explícita: `npm run live:normalize -- <hash-real-de-t
 
 `normalizeInvestigation` transforma datos del adapter en transaction, receipt, block y logs canónicos, manteniendo raw íntegro. Usa strings decimales para cantidades y distingue null de cero. Incluye fees derivadas cuando hay datos suficientes, DAG de evidencia con hashes/JSON Pointers y bundle_id determinístico. Un value declarado no prueba una transferencia efectiva; un log aún no es un evento decodificado. Los fixtures siguen identificados como synthetic.
 
-La salida JSON es autocontenida y exportable. Para guardar sólo el bundle (sin los mensajes npm), usar `node dist/normalize-cli.js fixture synthetic-native-success > normalized.json`. La función pura no escribe archivos. No hay aún base persistente multi-investigación, claims ni reporte revisado. [Contrato M2](openspec/changes/normalize-transaction-evidence/design.md).
+La salida JSON es autocontenida y exportable. Para guardar sólo el bundle (sin los mensajes npm), usar `node dist/normalize-cli.js fixture synthetic-native-success > normalized.json`. La función pura no escribe archivos. No hay aún base persistente multi-investigación, claims ni reporte revisado. [Contrato M2](openspec/changes/archive/2026-10-02-normalize-transaction-evidence/design.md).
 
 ## Extracción de eventos M3
 
@@ -82,7 +82,7 @@ npm run extract -- synthetic-token-events
 node dist/extract-cli.js fixture synthetic-token-events
 ```
 
-La extracción reconoce únicamente layouts canónicos de `Transfer` ERC-20/ERC-721 y `TransferSingle`/`TransferBatch` ERC-1155. Conserva eventos desconocidos o malformados, expande lotes de forma atómica, etiqueta cada movimiento como `event_reported` y enlaza eventos, transferencias y grafo base con evidencia content-addressed. No calcula balances netos ni afirma que el contrato cumpla el estándar. ABI arbitrario, resolución de proxies y metadatos siguen pendientes; las trazas offline se describen abajo. [Contrato M3](openspec/changes/extract-standard-token-events/design.md).
+La extracción reconoce únicamente layouts canónicos de `Transfer` ERC-20/ERC-721 y `TransferSingle`/`TransferBatch` ERC-1155. Conserva eventos desconocidos o malformados, expande lotes de forma atómica, etiqueta cada movimiento como `event_reported` y enlaza eventos, transferencias y grafo base con evidencia content-addressed. No calcula balances netos ni afirma que el contrato cumpla el estándar. ABI arbitrario, resolución de proxies y metadatos siguen pendientes; las trazas offline se describen abajo. [Contrato M3](openspec/changes/archive/2026-10-02-extract-standard-token-events/design.md).
 
 ## Trazas de llamadas offline
 
@@ -107,7 +107,7 @@ Normaliza trazas `callTracer` sintéticas de `fixtures/call-traces/`, verificada
 
 Sin traza, el reporte es idéntico byte a byte.
 
-**Tracing live: configuración lista, ejecución pendiente de proveedor.** `src/adapters/tracing.ts` envía sólo `debug_traceTransaction` con `callTracer` fijo a un host HTTPS configurado por administrador. Está deshabilitado salvo una configuración local con `enabled: true` (ver `config/live-tracing.example.json`; `config/live-tracing.json` está en `.gitignore`) y no forma parte de la allowlist RPC principal. PublicNode no ofrece `debug_*`, y los proveedores que lo ofrecen suelen requerir cuenta o API key, así que no se ha ejecutado ninguna traza real. Con el adapter Sepolia, `trace_transaction` sigue `unavailable`. Pasos pendientes: [enable-live-tracing](openspec/changes/enable-live-tracing/proposal.md). [Contrato](openspec/changes/add-offline-call-traces/design.md).
+**Tracing live: configuración lista, ejecución pendiente de proveedor.** `src/adapters/tracing.ts` envía sólo `debug_traceTransaction` con `callTracer` fijo a un host HTTPS configurado por administrador. Está deshabilitado salvo una configuración local con `enabled: true` (ver `config/live-tracing.example.json`; `config/live-tracing.json` está en `.gitignore`) y no forma parte de la allowlist RPC principal. PublicNode no ofrece `debug_*`, y los proveedores que lo ofrecen suelen requerir cuenta o API key, así que no se ha ejecutado ninguna traza real. Con el adapter Sepolia, `trace_transaction` sigue `unavailable`. Pasos pendientes: [enable-live-tracing](openspec/changes/enable-live-tracing/proposal.md). [Contrato](openspec/changes/archive/2026-10-02-add-offline-call-traces/design.md).
 
 ## Identificación de contratos y proxies
 
@@ -220,7 +220,7 @@ Con un tracer inyectado, cada run produce un `trace_id` y spans para run, análi
 
 `RunStore` guarda reporte y traza por run en `.runs/` (ignorado por git). Retención: 30 días por defecto y 24 h con `--profile demo`. `sweep` borra expirados y corruptos. Rechaza raíces dentro de `fixtures`, `corpus`, `evals` o `demo` y la raíz del proyecto, así que borrar un run nunca toca datos públicos. Las cuotas por identidad quedan diferidas: la demo es estática y no acepta consultas.
 
-## Demo pública M11 (workflow de Pages listo, sin publicar)
+## Demo pública M11 (publicada en GitHub Pages)
 
 ```powershell
 npm run demo:site
@@ -237,7 +237,7 @@ Publicación: `.github/workflows/pages.yml` (`Publish demo`, acciones fijadas po
 5. el despliegue en GitHub Pages;
 6. `scripts/verify-pages.mjs`, que compara cada página publicada byte a byte con el manifest y comprueba CSP y ausencia de secretos. Es el único camino que emite `published: true`.
 
-URL prevista: https://manuxd270516.github.io/blockchain-transaction-intelligence/. **Todavía no se ha desplegado**: falta habilitar Pages (`build_type=workflow`) y hacer push. La CSP va en `<meta>` porque Pages no permite cabeceras propias.
+**Publicada:** https://manuxd270516.github.io/blockchain-transaction-intelligence/ (run [36986271044](https://github.com/manuXD270516/blockchain-transaction-intelligence/actions/runs/36986271044), `verify-live` emitió `published: true` el 2026-10-02). La CSP va en `<meta>` porque Pages no permite cabeceras propias.
 
 ## Estructura y límites
 
@@ -270,23 +270,19 @@ Los hashes detectan cambios respecto al manifest, no prueban autenticidad del pr
 
 ## OpenSpec
 
-Changes de implementación: [M0 bootstrap](openspec/changes/bootstrap-offline-foundation/proposal.md), [M1 adapter](openspec/changes/add-ethereum-readonly-adapter/proposal.md), [M2 normalización](openspec/changes/normalize-transaction-evidence/proposal.md), [M3 eventos](openspec/changes/extract-standard-token-events/proposal.md), [M4 MCP](openspec/changes/add-readonly-mcp-server/proposal.md), [M5 RAG](openspec/changes/add-versioned-protocol-rag/proposal.md), [M6 orquestación](openspec/changes/add-bounded-analysis-orchestrator/proposal.md), [M7 revisión](openspec/changes/add-evidence-review-pipeline/proposal.md), [M8 grafo](openspec/changes/add-evidence-graph-view/proposal.md), [M9 evaluación](openspec/changes/consolidate-evaluation-runner/proposal.md), [M10 observabilidad](openspec/changes/add-local-observability-retention/proposal.md), [M11 demo](openspec/changes/prepare-public-demo/proposal.md), [trazas de llamadas offline](openspec/changes/add-offline-call-traces/proposal.md) (archivados en `openspec/changes/archive/`). Abiertos: [publicación en Pages](openspec/changes/publish-demo-github-pages/proposal.md), [requisitos diferidos de la fundación](openspec/changes/complete-foundation-deferred-requirements/proposal.md) y [tracing live](openspec/changes/enable-live-tracing/proposal.md).
+Changes de implementación: [M0 bootstrap](openspec/changes/archive/2026-10-02-bootstrap-offline-foundation/proposal.md), [M1 adapter](openspec/changes/archive/2026-10-02-add-ethereum-readonly-adapter/proposal.md), [M2 normalización](openspec/changes/archive/2026-10-02-normalize-transaction-evidence/proposal.md), [M3 eventos](openspec/changes/archive/2026-10-02-extract-standard-token-events/proposal.md), [M4 MCP](openspec/changes/archive/2026-10-02-add-readonly-mcp-server/proposal.md), [M5 RAG](openspec/changes/archive/2026-10-02-add-versioned-protocol-rag/proposal.md), [M6 orquestación](openspec/changes/archive/2026-10-02-add-bounded-analysis-orchestrator/proposal.md), [M7 revisión](openspec/changes/archive/2026-10-02-add-evidence-review-pipeline/proposal.md), [M8 grafo](openspec/changes/archive/2026-10-02-add-evidence-graph-view/proposal.md), [M9 evaluación](openspec/changes/archive/2026-10-02-consolidate-evaluation-runner/proposal.md), [M10 observabilidad](openspec/changes/archive/2026-10-02-add-local-observability-retention/proposal.md), [M11 demo](openspec/changes/archive/2026-10-02-prepare-public-demo/proposal.md), [trazas de llamadas offline](openspec/changes/archive/2026-10-02-add-offline-call-traces/proposal.md) (archivados en `openspec/changes/archive/`). También archivados: [publicación en Pages](openspec/changes/archive/2026-10-02-publish-demo-github-pages/proposal.md) y [requisitos diferidos de la fundación](openspec/changes/archive/2026-10-02-complete-foundation-deferred-requirements/proposal.md). Abierto: [tracing live](openspec/changes/enable-live-tracing/proposal.md).
 
-Primer change: [define-transaction-intelligence-foundation](openspec/changes/define-transaction-intelligence-foundation/proposal.md).
+Primer change: [define-transaction-intelligence-foundation](openspec/changes/archive/2026-10-02-define-transaction-intelligence-foundation/proposal.md).
 
-- [Arquitectura, alcance y dominio](openspec/changes/define-transaction-intelligence-foundation/design.md)
-- [Threat model](openspec/changes/define-transaction-intelligence-foundation/threat-model.md)
-- [Contrato MCP](openspec/changes/define-transaction-intelligence-foundation/mcp-contract.md)
-- [Evidencia y claims](openspec/changes/define-transaction-intelligence-foundation/evidence-model.md)
-- [RAG](openspec/changes/define-transaction-intelligence-foundation/rag-design.md)
-- [Evaluaciones](openspec/changes/define-transaction-intelligence-foundation/evaluation-strategy.md)
-- [Roadmap](openspec/changes/define-transaction-intelligence-foundation/roadmap.md)
-- [Tareas futuras](openspec/changes/define-transaction-intelligence-foundation/tasks.md)
+- [Arquitectura, alcance y dominio](openspec/changes/archive/2026-10-02-define-transaction-intelligence-foundation/design.md)
+- [Threat model](openspec/changes/archive/2026-10-02-define-transaction-intelligence-foundation/threat-model.md)
+- [Contrato MCP](openspec/changes/archive/2026-10-02-define-transaction-intelligence-foundation/mcp-contract.md)
+- [Evidencia y claims](openspec/changes/archive/2026-10-02-define-transaction-intelligence-foundation/evidence-model.md)
+- [RAG](openspec/changes/archive/2026-10-02-define-transaction-intelligence-foundation/rag-design.md)
+- [Evaluaciones](openspec/changes/archive/2026-10-02-define-transaction-intelligence-foundation/evaluation-strategy.md)
+- [Roadmap](openspec/changes/archive/2026-10-02-define-transaction-intelligence-foundation/roadmap.md)
+- [Tareas futuras](openspec/changes/archive/2026-10-02-define-transaction-intelligence-foundation/tasks.md)
 
 El diseño fija contratos objetivo M0–M11. Cada hito tuvo su propio change de implementación con criterios de aceptación antes de escribir código. Las tareas 2.1–2.12 están marcadas con la evidencia que las verifica.
 
-Los changes de cada hito están archivados y sus specs promovidas a `openspec/specs/`. Siguen abiertos:
-
-- este change de fundación, hasta registrar la CI remota de sus requisitos diferidos ya implementados;
-- `prepare-public-demo` y `publish-demo-github-pages`, hasta publicar el sitio;
-- `enable-live-tracing`, con configuración lista y ejecución pendiente de proveedor.
+Los changes de cada hito están archivados y sus specs promovidas a `openspec/specs/`. Este change de fundación también está archivado, con la CI remota de sus requisitos diferidos registrada (run [36986271061](https://github.com/manuXD270516/blockchain-transaction-intelligence/actions/runs/36986271061)). Sólo sigue abierto `enable-live-tracing`, con configuración lista y ejecución pendiente de proveedor.

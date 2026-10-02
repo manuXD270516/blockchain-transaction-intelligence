@@ -1,5 +1,14 @@
 # Verificación M0–M11
 
+## Publicación y CI remota del 2026-10-02
+
+Con la autorización del usuario se habilitó GitHub Pages (`build_type=workflow`) y se empujó `71ffd0f`:
+
+- `Offline foundation`, run [36986271061](https://github.com/manuXD270516/blockchain-transaction-intelligence/actions/runs/36986271061): 203/203 tests bajo `unshare --net` y fixtures sin diff.
+- `Publish demo`, run [36986271044](https://github.com/manuXD270516/blockchain-transaction-intelligence/actions/runs/36986271044): build con gates, `demo-cli verify`, deploy y `verify-live`. Las 6 páginas publicadas coinciden byte a byte con el manifiesto y llevan CSP por `<meta>`; se emitió `published: true` para https://manuxd270516.github.io/blockchain-transaction-intelligence/. Pages no permite cabeceras propias, así que HSTS, nosniff, CSP, referrer-policy y frame-options llegan vacías en la respuesta y quedan registradas así.
+
+Con eso se archivaron `prepare-public-demo`, `publish-demo-github-pages`, `complete-foundation-deferred-requirements` y `define-transaction-intelligence-foundation`. Sigue abierto `enable-live-tracing`.
+
 ## Requisitos diferidos y publicación preparada (2026-10-02, local)
 
 Sin llamadas reales a RPC, modelos, proveedores de tracing ni GitHub Pages. Commits locales sin push: `b6bbe32`, `a962fa0`, `71c6bcc` y `ba3ce59`.
@@ -32,8 +41,7 @@ Sin llamadas reales a RPC, modelos, proveedores de tracing ni GitHub Pages. Comm
 
 ### Pendiente
 
-- **Habilitar GitHub Pages:** la llamada `gh api -X POST …/pages -f build_type=workflow` fue denegada por el sistema de permisos y requiere decisión del usuario.
-- **Push y CI remota** de estos commits.
+- Pages y CI remota: resueltos el 2026-10-02 (ver la sección de publicación).
 - **Tracing live:** configuración lista, ejecución pendiente de proveedor.
 
 ## CI remota del 2026-10-02 (GitHub Actions)

@@ -24,5 +24,5 @@
 
 ## 3. Cierre
 
-- [ ] 3.1 Registrar la CI Linux remota de complete-foundation-deferred-requirements y archivar este change. Tracing live: configuración lista, ejecución pendiente de proveedor (change enable-live-tracing).
+- [x] 3.1 Registrar la CI Linux remota de complete-foundation-deferred-requirements y archivar este change. Tracing live: configuración lista, ejecución pendiente de proveedor (change enable-live-tracing). **Cumplida 2026-10-02:** CI remota registrada (run [36986271061](https://github.com/manuXD270516/blockchain-transaction-intelligence/actions/runs/36986271061)) y change archivado.
 No marcar tareas de implementación como completas por existir documentación. Las tareas 2.4–2.12 se marcaron el 2026-10-01 con la evidencia ejecutada citada (ver docs/verification.md). No archivar este change mientras las CI Linux remotas de sus changes de implementación sigan sin registrar; futuros changes deberán mantener la trazabilidad de estos contratos y de cualquier delta.

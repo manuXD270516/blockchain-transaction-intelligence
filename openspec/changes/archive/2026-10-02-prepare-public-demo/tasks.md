@@ -14,4 +14,4 @@
 ## Publicación
 
 - [x] 3.1 CI Linux remota. Omitida por decisión del usuario el 2026-09-29. **Cumplida 2026-10-02:** run [36948710154](https://github.com/manuXD270516/blockchain-transaction-intelligence/actions/runs/36948710154) de GitHub Actions (`ubuntu-latest`) sobre `ea1effc`: typecheck, build y 184/184 tests bajo `sudo unshare --net` (incluida la prueba de symlink de archivo) y regeneración de fixtures sin diff.
-- [ ] 3.2 Publicar el sitio. Pendiente de autorización explícita del usuario y de un host compatible.
+- [x] 3.2 Publicar el sitio. Pendiente de autorización explícita del usuario y de un host compatible. **Cumplida 2026-10-02:** autorizada por el usuario y publicada en GitHub Pages (https://manuxd270516.github.io/blockchain-transaction-intelligence/) por el workflow `Publish demo`, run [36986271044](https://github.com/manuXD270516/blockchain-transaction-intelligence/actions/runs/36986271044); ver publish-demo-github-pages.
